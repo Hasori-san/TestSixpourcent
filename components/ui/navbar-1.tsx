@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Menu, X, Bookmark, ArrowLeft, ChevronRight } from "lucide-react"
+import { BrandLogo } from "../../src/components/BrandLogo"
 
 export interface NavItem {
   id: string
@@ -154,18 +155,13 @@ const Navbar1: React.FC<Navbar1Props> = ({
             aria-label="Retour à l'accueil"
           >
             <motion.div
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-[#839b64] to-[#687f4c] shadow-md border border-[#eae5da]/30 text-[#3f241c]"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-[#eae5da] shadow-md border border-[#839b64]/30 p-1"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              whileHover={{ rotate: 10, scale: 1.05 }}
+              whileHover={{ rotate: 8, scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="16" cy="16" r="14" stroke="#3f241c" strokeWidth="2.5" />
-                <path d="M10 22L22 10" stroke="#3f241c" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="11.5" cy="11.5" r="2.5" fill="#3f241c" />
-                <circle cx="20.5" cy="20.5" r="2.5" fill="#3f241c" />
-              </svg>
+              <BrandLogo className="w-full h-full" />
             </motion.div>
 
             <div className="flex flex-col text-left">
@@ -300,8 +296,8 @@ const Navbar1: React.FC<Navbar1Props> = ({
               {/* Header inside card */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#eae5da]/15 bg-black/15">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-br from-[#839b64] to-[#687f4c] text-[#3f241c] font-black text-xs shadow">
-                    6%
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#eae5da] text-[#3f241c] p-0.5 shadow border border-[#839b64]/30">
+                    <BrandLogo className="w-full h-full" />
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-sm font-black tracking-tight text-[#eae5da]">

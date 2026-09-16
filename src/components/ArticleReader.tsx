@@ -6,8 +6,6 @@ import {
   Share2, 
   Clock, 
   Calendar, 
-  FileText, 
-  CheckCircle2, 
   ZoomIn, 
   ZoomOut, 
   Maximize2, 
@@ -260,31 +258,6 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
           </p>
         </div>
 
-        {/* Executive Summary / Key Revelations Box */}
-        <div className="my-10 p-6 sm:p-8 rounded-2xl bg-[#3f241c] text-[#eae5da] shadow-lg border-2 border-[#839b64]/50">
-          <div className="flex items-center gap-2.5 mb-4">
-            <span className="p-1.5 rounded bg-[#839b64] text-[#eae5da]">
-              <FileText className="w-5 h-5" />
-            </span>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              Ce qu'il faut retenir de l'enquête
-            </h2>
-          </div>
-          <p className="text-xs sm:text-sm text-[#eae5da]/70 font-mono mb-5">
-            Synthèse vérifiée par le comité de rigueur éditoriale Six%
-          </p>
-          <ul className="space-y-3.5">
-            {article.keyRevelations.map((rev, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#839b64] shrink-0 mt-0.5" />
-                <span className="text-sm sm:text-base text-[#eae5da]/95 leading-snug">
-                  {rev}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         {/* Article Body Sections */}
         <div className={`space-y-8 font-sans ${getBodySizeClass()}`}>
           {article.sections.map((section, idx) => (
@@ -343,32 +316,40 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
               <div 
                 key={rel.id}
                 id={`related-card-${rel.id}`}
-                className="bg-[#f4f0e8] rounded-xl overflow-hidden border border-[#3f241c]/15 flex flex-col justify-between hover:shadow-md transition-shadow"
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectArticle(rel)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectArticle(rel);
+                  }
+                }}
+                className="group bg-[#f4f0e8] rounded-xl overflow-hidden border border-[#3f241c]/15 hover:border-[#839b64]/50 flex flex-col justify-between hover:shadow-lg transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#839b64]"
               >
                 <div className="relative h-36 overflow-hidden">
                   <img
                     src={rel.heroImage}
                     alt={rel.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-[#839b64] text-[#eae5da] text-[10px] font-bold uppercase">
                     {rel.category}
                   </span>
                 </div>
                 <div className="p-4 flex-1 flex flex-col justify-between">
-                  <h4 className="text-sm font-bold text-[#3f241c] line-clamp-2 mb-2">
+                  <h4 className="text-sm font-bold text-[#3f241c] group-hover:text-[#839b64] line-clamp-2 mb-2 transition-colors">
                     {rel.title}
                   </h4>
                   <div className="flex items-center justify-between text-[11px] text-[#3f241c]/70 pt-3 border-t border-[#3f241c]/10">
                     <span>{rel.readTimeMinutes} min</span>
-                    <button
+                    <span
                       id={`btn-read-related-${rel.id}`}
-                      onClick={() => onSelectArticle(rel)}
-                      className="inline-flex items-center gap-1 font-bold text-[#839b64] hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-1 font-bold text-[#839b64] group-hover:underline"
                     >
                       Lire en 1 clic
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
                   </div>
                 </div>
               </div>
