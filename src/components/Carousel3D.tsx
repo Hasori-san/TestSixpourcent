@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
-import { ChevronLeft, ChevronRight, BookOpen, Clock, FileText, Bookmark, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Clock, Bookmark, ArrowRight } from 'lucide-react';
 
 interface Carousel3DProps {
   articles: Article[];
@@ -21,6 +21,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
   const [dragDeltaX, setDragDeltaX] = useState(0);
   const [isRightDragging, setIsRightDragging] = useState(false);
   const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const rightDragStartXRef = useRef(0);
@@ -30,6 +31,15 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
   const hasDraggedRef = useRef(false);
 
   const total = articles.length;
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const nextSlide = () => {
     setActiveIndex((prev) => (prev + 1) % total);
@@ -181,10 +191,10 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
             Les Dossiers Brûlants • Six% Focus
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#3f241c] tracking-tight">
-            Les Enquêtes Populaires du Moment
+            Les articles du moment
           </h2>
           <p className="text-sm sm:text-base text-[#3f241c]/80 mt-1 max-w-2xl">
-            Révélations exclusives, documents déclassifiés et dossiers majeurs en accès immédiat en un clic.
+            Toute l'info en un seul clic
           </p>
         </div>
 
@@ -232,7 +242,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
           cursor: isRightDragging ? 'grabbing' : 'default',
           touchAction: 'pan-y',
         }}
-        className="relative w-full h-[520px] sm:h-[560px] md:h-[600px] flex items-center justify-center perspective-1000 select-none px-4"
+        className="relative w-full h-[470px] sm:h-[560px] md:h-[600px] flex items-center justify-center perspective-1000 select-none px-6 sm:px-4"
       >
         {articles.map((article, index) => {
           // Circular offset relative to activeIndex
@@ -254,12 +264,13 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
           const dragShift = dragDeltaX;
           const dragTilt = dragShift * 0.05;
 
+          const baseOffset = isMobile ? 220 : 340;
           const tiltX = isActive ? -mousePos.y * 7 : 0;
-          const tiltY = (isActive ? mousePos.x * 9 + offset * 32 : offset * 36) - dragTilt;
-          const translateX = offset * 340 + dragShift + (isActive ? mousePos.x * 15 : 0);
-          const translateZ = isActive ? 110 : -140 * Math.abs(offset);
+          const tiltY = (isActive ? mousePos.x * 9 + offset * (isMobile ? 24 : 32) : offset * (isMobile ? 28 : 36)) - dragTilt;
+          const translateX = offset * baseOffset + dragShift + (isActive ? mousePos.x * 15 : 0);
+          const translateZ = isActive ? (isMobile ? 70 : 110) : (isMobile ? -100 : -140) * Math.abs(offset);
           const rotateZ = offset * -2 + (dragShift * -0.015);
-          const scale = isActive ? 1 : 0.85;
+          const scale = isActive ? 1 : (isMobile ? 0.82 : 0.85);
           // Systematically hide the fourth card (opacity 0) so only the balanced 3-card stage is visible
           const opacity = isActive ? 1 : Math.abs(offset) === 1 ? 0.7 : 0;
           const zIndex = isFourthCard ? -10 : 30 - Math.abs(offset) * 10;
@@ -290,12 +301,12 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
                 transition: transitionStyle,
                 cursor: isRightDragging ? 'grabbing' : (isActive ? 'default' : 'pointer'),
               }}
-              className={`absolute w-full max-w-[340px] sm:max-w-[440px] md:max-w-[560px] rounded-2xl overflow-hidden bg-[#f4f0e8] border-2 ${
+              className={`absolute w-[80vw] max-w-[285px] sm:max-w-[440px] md:max-w-[560px] rounded-2xl overflow-hidden bg-[#f4f0e8] border-2 ${
                 isActive ? 'border-[#839b64] shadow-2xl shadow-[#3f241c]/25 ring-2 ring-[#839b64]/30' : 'border-[#3f241c]/15 shadow-lg cursor-pointer'
               } ${isFourthCard ? 'pointer-events-none select-none' : ''} preserve-3d`}
             >
               {/* Image with Parallax Shift */}
-              <div className="relative h-56 sm:h-64 md:h-72 overflow-hidden bg-[#3f241c]">
+              <div className="relative h-44 sm:h-64 md:h-72 overflow-hidden bg-[#3f241c]">
                 <img
                   src={article.heroImage}
                   alt={article.title}
@@ -332,50 +343,38 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
                     <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
                   </button>
                 </div>
-
-                {/* Verification Badge */}
-                <div className="absolute bottom-3 left-4 flex items-center gap-2 text-xs text-[#eae5da]/90">
-                  <span className="inline-flex items-center gap-1 bg-[#3f241c]/80 backdrop-blur-sm px-2 py-0.5 rounded border border-[#eae5da]/20">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#839b64]" />
-                    {article.verifiedFactChecks} faits vérifiés
-                  </span>
-                  <span className="inline-flex items-center gap-1 bg-[#3f241c]/80 backdrop-blur-sm px-2 py-0.5 rounded border border-[#eae5da]/20">
-                    <FileText className="w-3.5 h-3.5 text-[#839b64]" />
-                    {article.leakedDocumentsCount} pièces déclassifiées
-                  </span>
-                </div>
               </div>
 
               {/* Card Content */}
-              <div className="p-5 sm:p-6 bg-[#f4f0e8] flex flex-col justify-between">
+              <div className="p-4 sm:p-6 bg-[#f4f0e8] flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-3 text-xs text-[#3f241c]/70 mb-2 font-mono">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#3f241c]/70 mb-1.5 sm:mb-2 font-mono">
                     <span>{article.publishedAt}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-[#839b64]" />
-                      {article.readTimeMinutes} min de lecture
+                      {article.readTimeMinutes} min
                     </span>
                   </div>
 
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#3f241c] line-clamp-2 leading-snug">
+                  <h3 className="text-base sm:text-xl md:text-2xl font-bold text-[#3f241c] line-clamp-2 leading-snug">
                     {article.title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-[#3f241c]/80 mt-2 line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#3f241c]/80 mt-1 sm:mt-2 line-clamp-2 leading-relaxed">
                     {article.subtitle}
                   </p>
                 </div>
 
                 {/* Interactive 1-Click Read Button */}
-                <div className="mt-5 pt-4 border-t border-[#3f241c]/10 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
+                <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-[#3f241c]/10 flex items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                     <img
                       src={article.author.avatar}
                       alt={article.author.name}
-                      className="w-7 h-7 rounded-full object-cover border border-[#839b64]"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-[#839b64] shrink-0"
                     />
-                    <span className="text-xs font-semibold text-[#3f241c]">
+                    <span className="text-xs font-semibold text-[#3f241c] truncate">
                       {article.author.name}
                     </span>
                   </div>
@@ -386,11 +385,11 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
                       e.stopPropagation();
                       onSelectArticle(article);
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-95 group"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-95 group shrink-0"
                   >
-                    <BookOpen className="w-4 h-4 transition-transform group-hover:scale-110" />
+                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:scale-110" />
                     <span>Lire en 1 clic</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
               </div>

@@ -65,10 +65,6 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onGoHome }) =>
             <p className="text-xs text-[#eae5da]/75 leading-relaxed">
               Nous n'acceptons aucune subvention conditionnée, aucun partenariat commercial et aucune publicité de marque.
             </p>
-            <div className="p-3.5 rounded-xl bg-[#2b1812] border border-[#839b64]/30 text-xs font-mono space-y-1">
-              <span className="text-[#839b64] font-bold block">Empreinte typographique :</span>
-              <span className="text-[#eae5da]/80">Hanken Grotesk pour une clarté de lecture universelle.</span>
-            </div>
           </div>
         </div>
 

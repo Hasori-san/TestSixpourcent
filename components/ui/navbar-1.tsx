@@ -401,7 +401,7 @@ const Navbar1: React.FC<Navbar1Props> = ({
 
               {/* Footer inside card */}
               <div className="px-4 py-2.5 bg-black/20 border-t border-[#eae5da]/10 text-center text-[10px] font-mono text-[#eae5da]/60">
-                Édition #48 • Média 100% indépendant & sans publicité
+                Édition #1 • Média 100% indépendant & sans publicité
               </div>
             </motion.div>
           </>
