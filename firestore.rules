@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Les enquêtes de Six Pourcent sont accessibles publiquement en lecture par tous les citoyens
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // L'équipe éditoriale et la fiche des journalistes
+    match /journalists/{journalistId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Le tableau de transparence des donateurs
+    match /donors/{donorId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // La photothèque et médiathèque de la rédaction
+    match /media_items/{mediaItemId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Test de connectivité
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+  }
+}

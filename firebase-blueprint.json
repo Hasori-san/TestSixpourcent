@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "Enquête journalistique indépendante de Six Pourcent",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant unique de l'enquête" },
+        "title": { "type": "string", "description": "Titre percutant de l'enquête" },
+        "subtitle": { "type": "string", "description": "Chapeau / sous-titre" },
+        "category": { "type": "string", "description": "Catégorie de l'enquête" },
+        "author": { "type": "object", "description": "Informations sur l'auteur journaliste" },
+        "heroImage": { "type": "string", "description": "URL de la photo de couverture" },
+        "heroImageCaption": { "type": "string", "description": "Légende de la photo" },
+        "content": { "type": "string", "description": "Contenu complet de l'enquête en markdown" },
+        "revelations": { "type": "array", "description": "Points clés et révélations" },
+        "readTime": { "type": "string", "description": "Temps de lecture estimé" },
+        "isFeatured": { "type": "boolean", "description": "Article à la une" },
+        "isPopular": { "type": "boolean", "description": "Article populaire" },
+        "publishDate": { "type": "string", "description": "Date de publication officielle" },
+        "updatedAt": { "type": "string", "description": "Date de dernière mise à jour ISO" }
+      },
+      "required": ["id", "title", "category", "heroImage", "content"]
+    },
+    "Journalist": {
+      "title": "Journalist",
+      "description": "Fiche de membre de la rédaction de Six Pourcent",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant du journaliste" },
+        "name": { "type": "string", "description": "Nom et prénom" },
+        "role": { "type": "string", "description": "Rôle éditorial au sein du média" },
+        "avatar": { "type": "string", "description": "Photo de profil" },
+        "bio": { "type": "string", "description": "Biographie journalistique" },
+        "email": { "type": "string", "description": "Email de contact rédaction" },
+        "twitter": { "type": "string", "description": "Identifiant réseau social" },
+        "isLead": { "type": "boolean", "description": "Rédacteur en chef ou reporter principal" }
+      },
+      "required": ["id", "name", "role", "avatar"]
+    },
+    "Donor": {
+      "title": "Donor",
+      "description": "Donateur du fonds de soutien à l'indépendance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant du don" },
+        "name": { "type": "string", "description": "Nom ou pseudonyme du donateur" },
+        "location": { "type": "string", "description": "Ville ou pays" },
+        "note": { "type": "string", "description": "Mention ou type de soutien" }
+      },
+      "required": ["id", "name"]
+    },
+    "MediaItem": {
+      "title": "MediaItem",
+      "description": "Fichier photographique ou document stocké dans la médiathèque",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant du média" },
+        "name": { "type": "string", "description": "Nom du fichier" },
+        "url": { "type": "string", "description": "URL ou source de l'image" },
+        "sizeBytes": { "type": "number", "description": "Taille en octets" },
+        "sizeFormatted": { "type": "string", "description": "Taille lisible (ex: 527 Ko)" },
+        "dimensions": { "type": "string", "description": "Dimensions pixels" },
+        "uploadedAt": { "type": "string", "description": "Date d'import" },
+        "category": { "type": "string", "description": "Catégorie médiathèque" },
+        "isPreset": { "type": "boolean", "description": "Image par défaut ou personnalisée" }
+      },
+      "required": ["id", "name", "url", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Collection des enquêtes et articles publiés par Six Pourcent"
+    },
+    "/journalists/{journalistId}": {
+      "schema": "Journalist",
+      "description": "Collection des journalistes de la rédaction"
+    },
+    "/donors/{donorId}": {
+      "schema": "Donor",
+      "description": "Collection des donateurs du média"
+    },
+    "/media_items/{mediaItemId}": {
+      "schema": "MediaItem",
+      "description": "Collection des visuels et photographies de la médiathèque"
+    },
+    "/test/{testId}": {
+      "schema": { "$ref": "#/entities/Article" },
+      "description": "Collection de test de connectivité Firestore"
+    }
+  }
+}

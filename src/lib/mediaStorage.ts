@@ -1,4 +1,11 @@
-// Media Storage engine using IndexedDB for high-capacity local image persistence
+import {
+  saveMediaToCloud,
+  deleteMediaFromCloud,
+  db,
+} from './firebase';
+import { collection, getDocs, doc, setDoc, writeBatch } from 'firebase/firestore';
+
+// Media Storage engine using IndexedDB with Firebase Cloud Firestore synchronization
 export interface MediaItem {
   id: string;
   name: string;
@@ -120,17 +127,45 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 export async function getMediaLibrary(): Promise<MediaItem[]> {
+  // 1. Tenter de charger depuis Cloud Firestore (données globales pour tous les visiteurs)
   try {
-    const db = await openDB();
+    const snap = await getDocs(collection(db, 'media_items'));
+    if (!snap.empty) {
+      const cloudItems = snap.docs.map((d) => d.data() as MediaItem);
+      // Synchroniser en tâche de fond dans IndexedDB pour le cache local
+      try {
+        const idb = await openDB();
+        const tx = idb.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        cloudItems.forEach((item) => store.put(item));
+      } catch {
+        // Ignorer l'erreur de cache
+      }
+      return cloudItems;
+    } else {
+      // Si la collection Firestore est vide, injecter les visuels par défaut
+      const batch = writeBatch(db);
+      INITIAL_MEDIA_PRESETS.forEach((p) => {
+        batch.set(doc(db, 'media_items', p.id), p);
+      });
+      await batch.commit();
+      return INITIAL_MEDIA_PRESETS;
+    }
+  } catch (err) {
+    console.warn('[Firebase Media] Mode hors-ligne ou erreur, repli vers IndexedDB local:', err);
+  }
+
+  // 2. Repli vers le stockage local IndexedDB
+  try {
+    const idb = await openDB();
     return new Promise((resolve) => {
-      const tx = db.transaction(STORE_NAME, 'readonly');
+      const tx = idb.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.getAll();
 
       req.onsuccess = () => {
         const stored = (req.result as MediaItem[]) || [];
         if (stored.length === 0) {
-          // Seed with initial presets
           seedInitialPresets().then((seeded) => resolve(seeded));
         } else {
           const missing = INITIAL_MEDIA_PRESETS.filter(
@@ -138,11 +173,11 @@ export async function getMediaLibrary(): Promise<MediaItem[]> {
           );
           if (missing.length > 0) {
             try {
-              const writeTx = db.transaction(STORE_NAME, 'readwrite');
+              const writeTx = idb.transaction(STORE_NAME, 'readwrite');
               const writeStore = writeTx.objectStore(STORE_NAME);
               missing.forEach((item) => writeStore.put(item));
             } catch {
-              // ignore write error if transaction fails
+              // ignore write error
             }
             resolve([...stored, ...missing]);
           } else {
@@ -176,31 +211,67 @@ async function seedInitialPresets(): Promise<MediaItem[]> {
 }
 
 export async function saveMediaItem(item: MediaItem): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.put(item);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+  // 1. Sauvegarder dans Cloud Firestore (pour que l'image soit accessible mondialement)
+  try {
+    await saveMediaToCloud(item);
+  } catch (err) {
+    console.warn('[Firebase Media] Erreur de sauvegarde Cloud Firestore:', err);
+  }
+
+  // 2. Sauvegarder dans IndexedDB local (cache immédiat)
+  try {
+    const idb = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = idb.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(item);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('[IndexedDB] Erreur sauvegarde locale:', err);
+  }
 }
 
 export async function deleteMediaItem(id: string): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.delete(id);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+  // 1. Supprimer de Cloud Firestore
+  try {
+    await deleteMediaFromCloud(id);
+  } catch (err) {
+    console.warn('[Firebase Media] Erreur suppression Cloud Firestore:', err);
+  }
+
+  // 2. Supprimer d'IndexedDB local
+  try {
+    const idb = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = idb.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('[IndexedDB] Erreur suppression locale:', err);
+  }
 }
 
 export async function resetMediaLibrary(): Promise<MediaItem[]> {
-  const db = await openDB();
+  try {
+    const snap = await getDocs(collection(db, 'media_items'));
+    const batch = writeBatch(db);
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    INITIAL_MEDIA_PRESETS.forEach((p) => {
+      batch.set(doc(db, 'media_items', p.id), p);
+    });
+    await batch.commit();
+  } catch (err) {
+    console.warn('[Firebase Media] Erreur réinitialisation Cloud:', err);
+  }
+
+  const idb = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const tx = idb.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.clear();
     for (const item of INITIAL_MEDIA_PRESETS) {
@@ -228,9 +299,9 @@ export function processUploadedImage(
       const img = new Image();
 
       img.onload = () => {
-        // Calculate dimensions and compress if image is overly large (> 2000px)
-        const maxWidth = 1920;
-        const maxHeight = 1280;
+        // Redimensionnement optimisé pour Cloud Firestore (haute définition 1600px max)
+        const maxWidth = 1600;
+        const maxHeight = 1200;
         let width = img.width;
         let height = img.height;
 
@@ -247,15 +318,13 @@ export function processUploadedImage(
         }
 
         let finalUrl = rawDataUrl;
-        if (needsResize || file.size > 1.5 * 1024 * 1024) {
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            finalUrl = canvas.toDataURL('image/jpeg', 0.88);
-          }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          finalUrl = canvas.toDataURL('image/jpeg', 0.84);
         }
 
         // Format file size

@@ -26,6 +26,7 @@ import {
   Mail,
   Phone,
   Lock,
+  Database,
 } from 'lucide-react';
 import { Article, Category, Journalist } from '../../types';
 import { Donor } from '../../data/donors';
@@ -216,12 +217,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm sm:text-base font-extrabold tracking-tight">
                 Six<span className="text-[#839b64]">%</span> Administration
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-[#839b64]/20 text-[#839b64] border border-[#839b64]/40">
                 Session active
+              </span>
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1.5 bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 shadow-xs"
+                title="Synchronisation permanente activée sur Google Firebase Firestore"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Cloud Firebase connecté</span>
               </span>
             </div>
             <p className="text-[11px] font-mono text-[#eae5da]/70 hidden sm:block">
@@ -887,7 +895,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <span>Médiathèque de la Rédaction</span>
                   </h3>
                   <p className="text-xs text-[#3f241c]/80 mt-1">
-                    Téléversez vos images depuis votre ordinateur (drag & drop ou explorateur). Vous pouvez ensuite les assigner en 1 clic à n'importe quelle enquête ou avatar de journaliste.
+                    Téléversez vos photos et documents depuis votre ordinateur (glisser-déposer ou explorateur). Retrouvez la date, le poids et le nom de chaque fichier, et copiez l'URL en 1 clic pour vos articles et profils.
                   </p>
                 </div>
               </div>
@@ -902,6 +910,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB 4: MAINTENANCE & DATA RESET */}
           {activeTab === 'maintenance' && (
             <div className="space-y-6 max-w-3xl">
+              {/* Cloud Database Status Card */}
+              <div className="bg-[#f4f0e8] p-6 rounded-2xl border-2 border-[#839b64]/30 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Database className="w-5 h-5 text-[#839b64]" />
+                    <h3 className="font-extrabold text-base text-[#3f241c]">
+                      Base de données Cloud (Google Firebase Firestore)
+                    </h3>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[#839b64]/20 text-[#839b64] border border-[#839b64]/40 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#839b64] animate-pulse" />
+                    <span>En ligne & Synchronisé</span>
+                  </span>
+                </div>
+
+                <p className="text-xs text-[#3f241c]/80 leading-relaxed">
+                  Toutes vos modifications (nouveaux articles, modifications d'enquêtes, photos de la médiathèque, journalistes et donateurs) sont enregistrées en temps réel dans votre base de données Google Firebase.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono">
+                  <div className="bg-[#eae5da] p-3 rounded-xl border border-[#3f241c]/10">
+                    <span className="text-[10px] text-[#3f241c]/60 uppercase font-bold block mb-0.5">
+                      Projet Cloud
+                    </span>
+                    <span className="font-bold text-[#3f241c]">artful-apex-rf38q</span>
+                  </div>
+                  <div className="bg-[#eae5da] p-3 rounded-xl border border-[#3f241c]/10">
+                    <span className="text-[10px] text-[#3f241c]/60 uppercase font-bold block mb-0.5">
+                      Site officiel déployé
+                    </span>
+                    <span className="font-bold text-[#839b64]">sixpourcent.vercel.app</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-[#f4f0e8] p-6 rounded-2xl border border-[#3f241c]/15 space-y-4">
                 <div className="flex items-center gap-2.5">
                   <Download className="w-5 h-5 text-[#839b64]" />

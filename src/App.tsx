@@ -16,6 +16,19 @@ import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { isSessionAdminAuthenticated, setSessionAdminAuthenticated } from './lib/adminAuth';
 import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, Shield, Lock, Settings } from 'lucide-react';
+import {
+  subscribeArticles,
+  saveArticleToCloud,
+  deleteArticleFromCloud,
+  subscribeJournalists,
+  saveJournalistToCloud,
+  deleteJournalistFromCloud,
+  subscribeDonors,
+  saveDonorToCloud,
+  deleteDonorFromCloud,
+  resetAllCloudData,
+} from './lib/firebase';
+import { INITIAL_MEDIA_PRESETS } from './lib/mediaStorage';
 
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
 const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
@@ -30,16 +43,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((art: Article) => {
-            const defaultArt = ARTICLES_DATA.find((da) => da.id === art.id);
-            if (defaultArt) {
-              return {
-                ...art,
-                author: defaultArt.author,
-              };
-            }
-            return art;
-          });
+          return parsed;
         }
       }
     } catch (e) {
@@ -167,6 +171,33 @@ export default function App() {
       console.error('Failed to persist journalists', e);
     }
   }, [journalists]);
+
+  // Real-time Cloud Firestore Subscriptions for Articles, Journalists & Donors
+  useEffect(() => {
+    const unsubArticles = subscribeArticles((cloudArticles) => {
+      if (cloudArticles && cloudArticles.length > 0) {
+        setArticles(cloudArticles);
+      }
+    }, articles);
+
+    const unsubJournalists = subscribeJournalists((cloudJournalists) => {
+      if (cloudJournalists && cloudJournalists.length > 0) {
+        setJournalists(cloudJournalists);
+      }
+    }, journalists);
+
+    const unsubDonors = subscribeDonors((cloudDonors) => {
+      if (cloudDonors && cloudDonors.length > 0) {
+        setDonors(cloudDonors);
+      }
+    }, donors);
+
+    return () => {
+      unsubArticles();
+      unsubJournalists();
+      unsubDonors();
+    };
+  }, []);
 
   // Handle URL hash changes for direct deep linking and back button support
   useEffect(() => {
@@ -299,6 +330,9 @@ export default function App() {
   // Article Management handlers
   const handleAddArticle = (newArticle: Article) => {
     setArticles((prev) => [newArticle, ...prev]);
+    saveArticleToCloud(newArticle).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur enregistrement article:', err)
+    );
   };
 
   const handleUpdateArticle = (updatedArticle: Article) => {
@@ -308,6 +342,9 @@ export default function App() {
     if (selectedArticle && selectedArticle.id === updatedArticle.id) {
       setSelectedArticle(updatedArticle);
     }
+    saveArticleToCloud(updatedArticle).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur mise à jour article:', err)
+    );
   };
 
   const handleDeleteArticle = (id: string) => {
@@ -316,23 +353,52 @@ export default function App() {
       setSelectedArticle(null);
       window.history.pushState(null, '', window.location.pathname);
     }
+    deleteArticleFromCloud(id).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur suppression article:', err)
+    );
   };
 
   const handleTogglePopular = (id: string) => {
     setArticles((prev) =>
-      prev.map((art) => (art.id === id ? { ...art, isPopular: !art.isPopular } : art))
+      prev.map((art) => {
+        if (art.id === id) {
+          const updated = { ...art, isPopular: !art.isPopular };
+          saveArticleToCloud(updated).catch((err) =>
+            console.warn('[Firebase Cloud] Erreur toggle popular:', err)
+          );
+          return updated;
+        }
+        return art;
+      })
     );
   };
 
   const handleToggleFeatured = (id: string) => {
     setArticles((prev) =>
-      prev.map((art) => (art.id === id ? { ...art, isFeatured: !art.isFeatured } : art))
+      prev.map((art) => {
+        if (art.id === id) {
+          const updated = { ...art, isFeatured: !art.isFeatured };
+          saveArticleToCloud(updated).catch((err) =>
+            console.warn('[Firebase Cloud] Erreur toggle featured:', err)
+          );
+          return updated;
+        }
+        return art;
+      })
     );
   };
 
   const handleResetArticles = () => {
     localStorage.removeItem(STORAGE_KEY_ARTICLES);
     setArticles(ARTICLES_DATA);
+    resetAllCloudData(
+      ARTICLES_DATA,
+      DEFAULT_JOURNALISTS,
+      DEFAULT_DONORS,
+      INITIAL_MEDIA_PRESETS
+    ).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur réinitialisation:', err)
+    );
   };
 
   const handlePreviewArticle = (article: Article) => {
@@ -346,35 +412,56 @@ export default function App() {
   // Donor Management handlers
   const handleAddDonor = (newDonor: Donor) => {
     setDonors((prev) => [newDonor, ...prev]);
+    saveDonorToCloud(newDonor).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur ajout donateur:', err)
+    );
   };
 
   const handleDeleteDonor = (id: string) => {
     setDonors((prev) => prev.filter((d) => d.id !== id));
+    deleteDonorFromCloud(id).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur suppression donateur:', err)
+    );
   };
 
   const handleResetDonors = () => {
     localStorage.removeItem(STORAGE_KEY_DONORS);
     setDonors(DEFAULT_DONORS);
+    DEFAULT_DONORS.forEach((d) =>
+      saveDonorToCloud(d).catch(() => {})
+    );
   };
 
   // Journalist Management handlers
   const handleAddJournalist = (newJournalist: Journalist) => {
     setJournalists((prev) => [newJournalist, ...prev]);
+    saveJournalistToCloud(newJournalist).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur ajout journaliste:', err)
+    );
   };
 
   const handleUpdateJournalist = (updatedJournalist: Journalist) => {
     setJournalists((prev) =>
       prev.map((j) => (j.id === updatedJournalist.id ? updatedJournalist : j))
     );
+    saveJournalistToCloud(updatedJournalist).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur mise à jour journaliste:', err)
+    );
   };
 
   const handleDeleteJournalist = (id: string) => {
     setJournalists((prev) => prev.filter((j) => j.id !== id));
+    deleteJournalistFromCloud(id).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur suppression journaliste:', err)
+    );
   };
 
   const handleResetJournalists = () => {
     localStorage.removeItem(STORAGE_KEY_JOURNALISTS);
     setJournalists(DEFAULT_JOURNALISTS);
+    DEFAULT_JOURNALISTS.forEach((j) =>
+      saveJournalistToCloud(j).catch(() => {})
+    );
   };
 
   // Filtered articles based on search & category

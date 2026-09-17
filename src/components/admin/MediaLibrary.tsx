@@ -12,7 +12,8 @@ import {
   SlidersHorizontal,
   RefreshCw,
   FolderOpen,
-  ArrowRight,
+  Calendar,
+  HardDrive,
   Maximize2,
   X,
   FileCheck,
@@ -49,8 +50,6 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
-  const [selectedArticleIdForAssign, setSelectedArticleIdForAssign] = useState<{ [mediaId: string]: string }>({});
-  const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -126,21 +125,6 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
     navigator.clipboard.writeText(item.url);
     setCopiedId(item.id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleAssign = (item: MediaItem) => {
-    const articleId = selectedArticleIdForAssign[item.id] || articles[0]?.id;
-    if (!articleId) {
-      alert('Aucune enquête sélectionnée');
-      return;
-    }
-
-    if (onAssignToArticle) {
-      const art = articles.find((a) => a.id === articleId);
-      onAssignToArticle(articleId, item.url, `Visuel documenté : ${item.name}`);
-      setAssignmentSuccess(`Image assignée à « ${art?.title || 'l\'enquête'} » avec succès !`);
-      setTimeout(() => setAssignmentSuccess(null), 3500);
-    }
   };
 
   // Quick Live Test: generates a simulated high-res investigation camera capture
@@ -253,8 +237,6 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
 
         await saveMediaItem(testItem);
         setMediaList((prev) => [testItem, ...prev]);
-        setAssignmentSuccess('Image test générée et ajoutée à votre médiathèque !');
-        setTimeout(() => setAssignmentSuccess(null), 3500);
       }
     } finally {
       setIsUploading(false);
@@ -270,19 +252,6 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {assignmentSuccess && (
-        <div className="p-3.5 rounded-2xl bg-[#839b64] text-[#eae5da] text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{assignmentSuccess}</span>
-          </div>
-          <button onClick={() => setAssignmentSuccess(null)} className="p-1 hover:bg-black/10 rounded-md">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* Upload Zone (Drag & Drop) */}
       <div
         onDragEnter={handleDrag}
@@ -433,87 +402,89 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
                 </div>
               </div>
 
-              {/* Item Info */}
-              <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-[#3f241c] truncate" title={item.name}>
-                    {item.name}
-                  </h4>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-[#3f241c]/60 mt-0.5">
-                    <span>{item.sizeFormatted}</span>
-                    <span>•</span>
-                    <span>{item.uploadedAt}</span>
-                    <span>•</span>
-                    <span className="text-[#839b64] font-bold">{item.category}</span>
+              {/* Item Info: Nom du fichier, Date et Poids prioritaires */}
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
+                <div className="space-y-3">
+                  {/* Nom du fichier */}
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#3f241c]/60 font-bold block mb-1">
+                      Nom du fichier
+                    </span>
+                    <h4
+                      className="font-bold text-xs sm:text-sm text-[#3f241c] leading-snug line-clamp-2 break-words"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </h4>
+                  </div>
+
+                  {/* Métadonnées essentielles : Date et Poids */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#3f241c]/10">
+                    <div className="bg-[#eae5da] p-2.5 rounded-xl border border-[#3f241c]/15">
+                      <div className="flex items-center gap-1.5 text-[#3f241c]/70 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                        <Calendar className="w-3 h-3 text-[#839b64] shrink-0" />
+                        <span>Date</span>
+                      </div>
+                      <p
+                        className="text-xs font-mono font-bold text-[#3f241c] mt-1 truncate"
+                        title={item.uploadedAt}
+                      >
+                        {item.uploadedAt}
+                      </p>
+                    </div>
+
+                    <div className="bg-[#eae5da] p-2.5 rounded-xl border border-[#3f241c]/15">
+                      <div className="flex items-center gap-1.5 text-[#3f241c]/70 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                        <HardDrive className="w-3 h-3 text-[#839b64] shrink-0" />
+                        <span>Poids</span>
+                      </div>
+                      <p className="text-xs font-mono font-bold text-[#839b64] mt-1">
+                        {item.sizeFormatted}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Picker Mode Button or Assign Controls */}
+                {/* Actions (Picker Mode ou Actions rapides) */}
                 {isPickerMode ? (
                   <button
                     type="button"
                     onClick={() => onSelectImage && onSelectImage(item.url)}
-                    className="w-full py-2 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Sélectionner cette image</span>
                   </button>
                 ) : (
-                  <div className="space-y-2 pt-2 border-t border-[#3f241c]/10 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <select
-                        value={selectedArticleIdForAssign[item.id] || articles[0]?.id || ''}
-                        onChange={(e) =>
-                          setSelectedArticleIdForAssign({
-                            ...selectedArticleIdForAssign,
-                            [item.id]: e.target.value,
-                          })
-                        }
-                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#eae5da] border border-[#3f241c]/20 text-[11px] font-medium text-[#3f241c] outline-none truncate"
-                      >
-                        {articles.map((art) => (
-                          <option key={art.id} value={art.id}>
-                            Couverture: {art.title}
-                          </option>
-                        ))}
-                      </select>
+                  <div className="flex items-center justify-between pt-2 border-t border-[#3f241c]/10 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyUrl(item)}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-[#eae5da] hover:bg-[#ded8cc] text-[#3f241c] font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-[#3f241c]/15"
+                      title="Copier le lien direct vers le presse-papiers"
+                    >
+                      {copiedId === item.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-[#839b64]" />
+                          <span className="text-[#839b64]">Copié !</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-[#3f241c]/70" />
+                          <span>Copier l'URL</span>
+                        </>
+                      )}
+                    </button>
 
-                      <button
-                        onClick={() => handleAssign(item)}
-                        className="px-2.5 py-1.5 rounded-lg bg-[#839b64] hover:bg-[#728956] text-[#eae5da] font-bold text-[11px] transition-colors cursor-pointer shrink-0 flex items-center gap-1"
-                        title="Remplacer la couverture de l'enquête choisie avec cette image"
-                      >
-                        <ArrowRight className="w-3 h-3" />
-                        <span>Assigner</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] pt-1">
-                      <button
-                        onClick={() => handleCopyUrl(item)}
-                        className="text-[#3f241c]/70 hover:text-[#3f241c] flex items-center gap-1 cursor-pointer"
-                      >
-                        {copiedId === item.id ? (
-                          <>
-                            <Check className="w-3 h-3 text-[#839b64]" />
-                            <span className="text-[#839b64] font-bold">Copié !</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copier l'URL</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setPreviewItem(item)}
-                        className="text-[#3f241c]/70 hover:text-[#3f241c] flex items-center gap-1 cursor-pointer"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        <span>Détails</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewItem(item)}
+                      className="py-2 px-3 rounded-xl bg-[#3f241c] hover:bg-[#2b1812] text-[#eae5da] font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      title="Afficher l'image en grand format avec tous les détails"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Aperçu</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -533,14 +504,16 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
           <div className="bg-[#eae5da] max-w-3xl w-full rounded-2xl border-2 border-[#3f241c] shadow-2xl overflow-hidden text-[#3f241c] flex flex-col max-h-[90vh]">
             <div className="p-4 bg-[#3f241c] text-[#eae5da] flex items-center justify-between shrink-0">
               <div className="truncate pr-4">
-                <h3 className="font-bold text-sm truncate">{previewItem.name}</h3>
-                <span className="text-[11px] font-mono text-[#839b64]">
-                  {previewItem.dimensions} • {previewItem.sizeFormatted}
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#839b64] font-bold block">
+                  Nom du fichier
                 </span>
+                <h3 className="font-bold text-sm sm:text-base truncate" title={previewItem.name}>
+                  {previewItem.name}
+                </h3>
               </div>
               <button
                 onClick={() => setPreviewItem(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -554,22 +527,39 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
               />
             </div>
 
-            <div className="p-4 bg-[#ded8cc] border-t border-[#3f241c]/15 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div className="text-xs font-mono text-[#3f241c]/80">
-                Catégorie : <strong>{previewItem.category}</strong> • Date : {previewItem.uploadedAt}
+            {/* Informations clés : Date & Poids */}
+            <div className="p-4 bg-[#ded8cc] border-t border-[#3f241c]/15 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="bg-[#f4f0e8] px-3 py-1.5 rounded-lg border border-[#3f241c]/15 flex items-center gap-1.5 text-xs font-mono">
+                  <Calendar className="w-3.5 h-3.5 text-[#839b64]" />
+                  <span className="text-[#3f241c]/70 font-semibold">Date :</span>
+                  <span className="font-bold text-[#3f241c]">{previewItem.uploadedAt}</span>
+                </div>
+
+                <div className="bg-[#f4f0e8] px-3 py-1.5 rounded-lg border border-[#3f241c]/15 flex items-center gap-1.5 text-xs font-mono">
+                  <HardDrive className="w-3.5 h-3.5 text-[#839b64]" />
+                  <span className="text-[#3f241c]/70 font-semibold">Poids :</span>
+                  <span className="font-bold text-[#839b64]">{previewItem.sizeFormatted}</span>
+                </div>
+
+                {previewItem.dimensions && (
+                  <div className="bg-[#f4f0e8] px-3 py-1.5 rounded-lg border border-[#3f241c]/15 text-xs font-mono text-[#3f241c]/80">
+                    <span className="text-[#3f241c]/70 font-semibold">Résolution :</span> {previewItem.dimensions}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopyUrl(previewItem)}
-                  className="px-3 py-1.5 rounded-xl bg-[#f4f0e8] hover:bg-white text-xs font-bold border border-[#3f241c]/20 cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-[#f4f0e8] hover:bg-white text-xs font-bold border border-[#3f241c]/20 cursor-pointer flex items-center gap-1.5 transition-colors"
                 >
                   <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedId === previewItem.id ? 'Copié !' : 'Copier l\'adresse'}</span>
+                  <span>{copiedId === previewItem.id ? 'Copié !' : 'Copier le lien'}</span>
                 </button>
                 <button
                   onClick={() => setPreviewItem(null)}
-                  className="px-4 py-1.5 rounded-xl bg-[#3f241c] text-[#eae5da] text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#3f241c] hover:bg-[#2b1812] text-[#eae5da] text-xs font-bold cursor-pointer transition-colors"
                 >
                   Fermer
                 </button>
