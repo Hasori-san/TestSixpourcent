@@ -1,6 +1,8 @@
 import React from 'react';
 import { Article } from '../types';
 import { Clock, Bookmark, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
+import { useAdminMedia } from '../context/AdminMediaContext';
+import { EditableImageBadge } from './admin/EditableImageBadge';
 
 interface ArticleCardProps {
   article: Article;
@@ -17,6 +19,10 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   onToggleBookmark,
   variant = 'standard',
 }) => {
+  const { getImageFor } = useAdminMedia();
+  const activeHeroImage = getImageFor(`article-${article.id}-hero`, article.heroImage);
+  const activeAuthorAvatar = getImageFor(`article-${article.id}-author`, article.author.avatar);
+
   if (variant === 'featured') {
     return (
       <article
@@ -25,13 +31,19 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         className="group relative rounded-2xl overflow-hidden bg-[#f4f0e8] border border-[#3f241c]/15 shadow-md hover:shadow-xl transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 cursor-pointer"
       >
         <div className="lg:col-span-7 relative h-64 sm:h-80 lg:h-full overflow-hidden bg-[#3f241c]">
+          <EditableImageBadge
+            slotId={`article-${article.id}-hero`}
+            label={`Couverture • ${article.title}`}
+            position="top-left"
+          />
+
           <img
-            src={article.heroImage}
+            src={activeHeroImage}
             alt={article.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-95"
             loading="lazy"
           />
-          <div className="absolute top-4 left-4 flex items-center gap-2">
+          <div className="absolute top-4 left-4 flex items-center gap-2 pointer-events-none">
             <span className="px-3 py-1 rounded bg-[#839b64] text-[#eae5da] text-xs font-bold uppercase tracking-wider shadow">
               {article.category}
             </span>
@@ -91,7 +103,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           <div className="mt-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <img
-                src={article.author.avatar}
+                src={activeAuthorAvatar}
                 alt={article.author.name}
                 className="w-8 h-8 rounded-full object-cover border border-[#839b64]"
               />
@@ -124,13 +136,19 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
       className="group relative rounded-2xl overflow-hidden bg-[#f4f0e8] border border-[#3f241c]/15 shadow hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer"
     >
       <div className="relative h-48 sm:h-52 overflow-hidden bg-[#3f241c]">
+        <EditableImageBadge
+          slotId={`article-${article.id}-hero`}
+          label={`Couverture • ${article.title}`}
+          position="top-left"
+        />
+
         <img
-          src={article.heroImage}
+          src={activeHeroImage}
           alt={article.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-95"
           loading="lazy"
         />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 pointer-events-none">
           <span className="px-2.5 py-1 rounded bg-[#839b64] text-[#eae5da] text-[11px] font-bold uppercase tracking-wider shadow">
             {article.category}
           </span>
@@ -174,9 +192,16 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         </div>
 
         <div className="mt-5 pt-3 border-t border-[#3f241c]/10 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-mono text-[#3f241c]/70">
-            {article.author.name}
-          </span>
+          <div className="flex items-center gap-2">
+            <img
+              src={activeAuthorAvatar}
+              alt={article.author.name}
+              className="w-6 h-6 rounded-full object-cover border border-[#839b64]/50"
+            />
+            <span className="text-[11px] font-mono text-[#3f241c]/70">
+              {article.author.name}
+            </span>
+          </div>
 
           <button
             id={`btn-read-card-${article.id}`}
@@ -194,3 +219,4 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
     </article>
   );
 };
+

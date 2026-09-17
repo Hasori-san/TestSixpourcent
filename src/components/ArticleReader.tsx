@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Article } from '../types';
+import { useAdminMedia } from '../context/AdminMediaContext';
+import { EditableImageBadge } from './admin/EditableImageBadge';
 import { 
   ArrowLeft, 
   Bookmark, 
@@ -36,6 +38,10 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
   onSelectArticle,
   isMobileMenuOpen = false,
 }) => {
+  const { getImageFor } = useAdminMedia();
+  const activeHeroImage = getImageFor(`article-${article.id}-hero`, article.heroImage);
+  const activeAuthorAvatar = getImageFor(`article-${article.id}-author`, article.author.avatar);
+
   const [fontSizeLevel, setFontSizeLevel] = useState<'base' | 'large' | 'xlarge'>('large');
   const [copyNotification, setCopyNotification] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -227,7 +233,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
         <div className="flex items-center gap-4 p-4 rounded-xl bg-[#ded8cc]/50 border border-[#3f241c]/15 mb-8">
           <div className="flex items-center gap-3.5">
             <img
-              src={article.author.avatar}
+              src={activeAuthorAvatar}
               alt={article.author.name}
               className="w-12 h-12 rounded-full object-cover border-2 border-[#839b64]"
             />
@@ -239,9 +245,14 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
         </div>
 
         {/* Hero Photo with Caption */}
-        <div className="mb-10 rounded-2xl overflow-hidden shadow-md border border-[#3f241c]/20">
+        <div className="relative mb-10 rounded-2xl overflow-hidden shadow-md border border-[#3f241c]/20 group">
+          <EditableImageBadge
+            slotId={`article-${article.id}-hero`}
+            label={`Couverture • ${article.title}`}
+            position="top-left"
+          />
           <img
-            src={article.heroImage}
+            src={activeHeroImage}
             alt={article.title}
             className="w-full max-h-[460px] object-cover"
           />

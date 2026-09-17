@@ -9,11 +9,24 @@ import { SearchBar } from './components/SearchBar';
 import { FavoritesModal } from './components/FavoritesModal';
 import { Footer } from './components/Footer';
 import { DonorsMarquee } from './components/DonorsMarquee';
-import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { EditorialTeamSection } from './components/EditorialTeamSection';
+import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { AdminMediaProvider, useAdminMedia } from './context/AdminMediaContext';
+import { AdminBar } from './components/admin/AdminBar';
+import { MediaLibraryModal } from './components/admin/MediaLibraryModal';
+import { SiteImagesManagerModal } from './components/admin/SiteImagesManagerModal';
+import { AdminLoginModal } from './components/admin/AdminLoginModal';
 
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
 
-export default function App() {
+function MainAppContent() {
+  const {
+    isAdmin,
+    openLoginModal,
+    openMediaLibrary,
+    toastMessage,
+  } = useAdminMedia();
+
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('Tous');
@@ -31,6 +44,22 @@ export default function App() {
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
+
+  // Global keyboard shortcut for admin access: Ctrl+Shift+A or Cmd+Shift+A
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        if (isAdmin) {
+          openMediaLibrary();
+        } else {
+          openLoginModal();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdmin, openLoginModal, openMediaLibrary]);
 
   // Sync bookmarks to localStorage
   useEffect(() => {
@@ -207,7 +236,32 @@ export default function App() {
   const gridArticles = showFeatured ? filteredArticles.slice(1) : filteredArticles;
 
   return (
-    <div className="min-h-screen bg-[#eae5da] text-[#3f241c] flex flex-col selection:bg-[#839b64] selection:text-[#eae5da]">
+    <div
+      id="app-root-container"
+      className={`min-h-screen bg-[#eae5da] text-[#3f241c] flex flex-col selection:bg-[#839b64] selection:text-[#eae5da] transition-all duration-200 ${
+        isAdmin ? 'pt-8' : ''
+      }`}
+    >
+      {/* WordPress Admin Floating Bar */}
+      <AdminBar />
+
+      {/* Admin Modals */}
+      <MediaLibraryModal />
+      <SiteImagesManagerModal />
+      <AdminLoginModal />
+
+      {/* Admin Feedback Toast */}
+      {toastMessage && (
+        <aside
+          id="admin-toast-notification"
+          aria-label="Notification d'administration"
+          className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-[#1e1e1e] text-[#eae5da] text-xs font-sans font-medium shadow-2xl border border-[#839b64] flex items-center gap-2.5"
+        >
+          <CheckCircle2 className="w-4 h-4 text-[#839b64] shrink-0" />
+          <span>{toastMessage}</span>
+        </aside>
+      )}
+
       {/* Top Navigation using Navbar1 responsive floating pill system */}
       <Navbar
         currentTab={activeNavTab}
@@ -393,6 +447,9 @@ export default function App() {
             </section>
           )}
 
+          {/* Présentation de l'équipe de rédaction */}
+          <EditorialTeamSection />
+
           {/* Bandeau défilant des donateurs et donatrices */}
           <DonorsMarquee />
         </main>
@@ -424,5 +481,13 @@ export default function App() {
         onGoHome={handleBackToOverview}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AdminMediaProvider>
+      <MainAppContent />
+    </AdminMediaProvider>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Shield, Lock, FileCheck2, Heart } from 'lucide-react';
+import { Shield, Lock, FileCheck2, Heart, KeyRound } from 'lucide-react';
 import { Category } from '../types';
 import { CATEGORIES } from '../data/articles';
+import { useAdminMedia } from '../context/AdminMediaContext';
 
 interface FooterProps {
   onSelectCategory: (cat: Category) => void;
@@ -9,6 +10,8 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onGoHome }) => {
+  const { isAdmin, openLoginModal, openMediaLibrary } = useAdminMedia();
+
   return (
     <footer id="global-footer" className="bg-[#3f241c] text-[#eae5da] pt-14 pb-10 border-t-4 border-[#839b64]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,18 +68,48 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onGoHome }) =>
             <p className="text-xs text-[#eae5da]/75 leading-relaxed">
               Nous n'acceptons aucune subvention conditionnée, aucun partenariat commercial et aucune publicité de marque.
             </p>
+            <button
+              onClick={() => {
+                onGoHome();
+                setTimeout(() => {
+                  const teamSec = document.getElementById('section-equipe-redaction');
+                  if (teamSec) {
+                    teamSec.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 50);
+              }}
+              className="text-xs font-mono text-[#839b64] hover:underline flex items-center gap-1.5 cursor-pointer pt-1"
+            >
+              <span>L'équipe de rédaction & déontologie →</span>
+            </button>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#eae5da]/60">
           <p>© 2026 Six% — Média d'investigation indépendant. Tous droits réservés.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <span>Charte de Munich</span>
             <span>•</span>
             <span>Protocole SecureDrop</span>
             <span>•</span>
             <span>Mentions Légales</span>
+            <span>•</span>
+            <button
+              id="footer-admin-btn"
+              onClick={() => {
+                if (isAdmin) {
+                  openMediaLibrary();
+                } else {
+                  openLoginModal();
+                }
+              }}
+              className="inline-flex items-center gap-1 text-[#839b64] hover:text-[#eae5da] hover:underline transition-colors cursor-pointer font-bold"
+              title={isAdmin ? "Ouvrir la médiathèque d'images" : "Accès réservé à l'administrateur (banque d'images)"}
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>{isAdmin ? 'Médiathèque (Admin)' : 'Accès Rédaction & Admin'}</span>
+            </button>
           </div>
         </div>
       </div>
