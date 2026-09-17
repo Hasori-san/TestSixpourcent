@@ -309,3 +309,33 @@ export async function resetAllCloudData(
   defaultMedia.forEach((m) => b4.set(doc(db, 'media_items', m.id), m));
   await b4.commit();
 }
+
+/* =========================================================================
+   GLOBAL SITE SETTINGS (e.g. Editorial Conference Photo)
+   ========================================================================= */
+
+export interface SiteSettings {
+  editorialTeamPhoto?: string;
+}
+
+export function subscribeSiteSettings(
+  onUpdate: (settings: SiteSettings) => void
+): () => void {
+  const ref = doc(db, 'settings', 'general');
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        onUpdate(snap.data() as SiteSettings);
+      }
+    },
+    (err) => {
+      console.warn('[Firebase] Erreur lecture paramètres site:', err);
+    }
+  );
+}
+
+export async function saveSiteSettings(settings: Partial<SiteSettings>): Promise<void> {
+  const ref = doc(db, 'settings', 'general');
+  await setDoc(ref, settings, { merge: true });
+}

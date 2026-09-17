@@ -25,6 +25,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Paramètres globaux du site
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Test de connectivité
     match /test/{testId} {
       allow read, write: if true;

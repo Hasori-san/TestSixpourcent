@@ -14,6 +14,8 @@ import { DonorsMarquee } from './components/DonorsMarquee';
 import { EditorialTeamSection } from './components/EditorialTeamSection';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLiveBar } from './components/admin/AdminLiveBar';
+import { QuickImagePickerModal } from './components/admin/QuickImagePickerModal';
 import { isSessionAdminAuthenticated, setSessionAdminAuthenticated } from './lib/adminAuth';
 import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, Shield, Lock, Settings } from 'lucide-react';
 import {
@@ -26,9 +28,17 @@ import {
   subscribeDonors,
   saveDonorToCloud,
   deleteDonorFromCloud,
+  subscribeSiteSettings,
+  saveSiteSettings,
+  SiteSettings,
   resetAllCloudData,
 } from './lib/firebase';
 import { INITIAL_MEDIA_PRESETS } from './lib/mediaStorage';
+
+export type ImagePickerTarget =
+  | { type: 'article'; article: Article; title: string; currentUrl: string }
+  | { type: 'author-avatar'; journalist: Journalist; title: string; currentUrl: string }
+  | { type: 'editorial-photo'; title: string; currentUrl: string };
 
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
 const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
@@ -133,6 +143,14 @@ export default function App() {
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
 
+  // In-place Quick Image Picker Modal state for admin mode
+  const [pickerTarget, setPickerTarget] = useState<ImagePickerTarget | null>(null);
+
+  // Global site configuration (editorial conference photo, etc.)
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    editorialPhoto: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85',
+  });
+
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -172,7 +190,7 @@ export default function App() {
     }
   }, [journalists]);
 
-  // Real-time Cloud Firestore Subscriptions for Articles, Journalists & Donors
+  // Real-time Cloud Firestore Subscriptions for Articles, Journalists, Donors & SiteSettings
   useEffect(() => {
     const unsubArticles = subscribeArticles((cloudArticles) => {
       if (cloudArticles && cloudArticles.length > 0) {
@@ -192,10 +210,20 @@ export default function App() {
       }
     }, donors);
 
+    const unsubSettings = subscribeSiteSettings((cloudSettings) => {
+      if (cloudSettings) {
+        setSiteSettings((prev) => ({
+          ...prev,
+          ...cloudSettings,
+        }));
+      }
+    });
+
     return () => {
       unsubArticles();
       unsubJournalists();
       unsubDonors();
+      unsubSettings();
     };
   }, []);
 
@@ -444,9 +472,116 @@ export default function App() {
     setJournalists((prev) =>
       prev.map((j) => (j.id === updatedJournalist.id ? updatedJournalist : j))
     );
+
+    // Auto-propagate journalist avatar & role to all articles authored by this journalist
+    setArticles((prev) =>
+      prev.map((art) => {
+        if (
+          art.author.id === updatedJournalist.id ||
+          art.author.name.toLowerCase() === updatedJournalist.name.toLowerCase()
+        ) {
+          const updatedArt = {
+            ...art,
+            author: {
+              ...art.author,
+              name: updatedJournalist.name,
+              role: updatedJournalist.role,
+              avatar: updatedJournalist.avatar,
+            },
+          };
+          saveArticleToCloud(updatedArt).catch(() => {});
+          return updatedArt;
+        }
+        return art;
+      })
+    );
+
+    if (
+      selectedArticle &&
+      (selectedArticle.author.id === updatedJournalist.id ||
+        selectedArticle.author.name.toLowerCase() === updatedJournalist.name.toLowerCase())
+    ) {
+      setSelectedArticle((prev) =>
+        prev
+          ? {
+              ...prev,
+              author: {
+                ...prev.author,
+                name: updatedJournalist.name,
+                role: updatedJournalist.role,
+                avatar: updatedJournalist.avatar,
+              },
+            }
+          : null
+      );
+    }
+
     saveJournalistToCloud(updatedJournalist).catch((err) =>
       console.warn('[Firebase Cloud] Erreur mise à jour journaliste:', err)
     );
+  };
+
+  // Image editing handlers for admin live site mode
+  const handleEditArticleImage = (article: Article) => {
+    setPickerTarget({
+      type: 'article',
+      article,
+      title: `Changer l'image principale : "${article.title}"`,
+      currentUrl: article.heroImage,
+    });
+  };
+
+  const handleEditAuthorAvatar = (author: { name: string; avatar: string; role?: string; id?: string }) => {
+    const existing = journalists.find(
+      (j) => (author.id && j.id === author.id) || j.name.toLowerCase() === author.name.toLowerCase()
+    );
+    const targetJournalist: Journalist = existing || {
+      id: author.id || `journo-${Date.now()}`,
+      name: author.name,
+      role: author.role || 'Journaliste d\'investigation',
+      avatar: author.avatar,
+    };
+    setPickerTarget({
+      type: 'author-avatar',
+      journalist: targetJournalist,
+      title: `Changer la photo de profil : ${targetJournalist.name}`,
+      currentUrl: targetJournalist.avatar,
+    });
+  };
+
+  const handleEditEditorialPhoto = () => {
+    setPickerTarget({
+      type: 'editorial-photo',
+      title: "Changer la grande photo de la rédaction (Conférence de presse)",
+      currentUrl: siteSettings.editorialPhoto || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85',
+    });
+  };
+
+  const handleSelectNewImage = async (newUrl: string) => {
+    if (!pickerTarget) return;
+
+    if (pickerTarget.type === 'article') {
+      const updated: Article = {
+        ...pickerTarget.article,
+        heroImage: newUrl,
+      };
+      handleUpdateArticle(updated);
+    } else if (pickerTarget.type === 'author-avatar') {
+      const updatedJournalist: Journalist = {
+        ...pickerTarget.journalist,
+        avatar: newUrl,
+      };
+      handleUpdateJournalist(updatedJournalist);
+    } else if (pickerTarget.type === 'editorial-photo') {
+      const updatedSettings: SiteSettings = {
+        ...siteSettings,
+        editorialPhoto: newUrl,
+      };
+      setSiteSettings(updatedSettings);
+      await saveSiteSettings(updatedSettings);
+    }
+
+    setPickerTarget(null);
   };
 
   const handleDeleteJournalist = (id: string) => {
@@ -544,6 +679,9 @@ export default function App() {
           allArticles={articles}
           onSelectArticle={handleSelectArticle}
           isMobileMenuOpen={isMobileMenuOpen}
+          isAdmin={isAdminAuthenticated}
+          onEditImage={handleEditArticleImage}
+          onEditAuthorAvatar={handleEditAuthorAvatar}
         />
       ) : (
         <main className="flex-1 w-full pb-20">
@@ -640,6 +778,9 @@ export default function App() {
                     isBookmarked={bookmarkedIds.includes(featuredArticle.id)}
                     onToggleBookmark={toggleBookmark}
                     variant="featured"
+                    isAdmin={isAdminAuthenticated}
+                    onEditImage={handleEditArticleImage}
+                    onEditAuthorAvatar={handleEditAuthorAvatar}
                   />
                 </div>
               )}
@@ -671,6 +812,9 @@ export default function App() {
                         isBookmarked={bookmarkedIds.includes(article.id)}
                         onToggleBookmark={toggleBookmark}
                         variant="standard"
+                        isAdmin={isAdminAuthenticated}
+                        onEditImage={handleEditArticleImage}
+                        onEditAuthorAvatar={handleEditAuthorAvatar}
                       />
                     ))}
                   </div>
@@ -709,7 +853,13 @@ export default function App() {
           )}
 
           {/* Présentation de l'équipe de rédaction */}
-          <EditorialTeamSection journalists={journalists} />
+          <EditorialTeamSection
+            journalists={journalists}
+            editorialPhoto={siteSettings.editorialPhoto}
+            isAdmin={isAdminAuthenticated}
+            onEditEditorialPhoto={handleEditEditorialPhoto}
+            onEditJournalistAvatar={handleEditAuthorAvatar}
+          />
 
           {/* Bandeau défilant des donateurs et donatrices */}
           <DonorsMarquee donors={donors} />
@@ -744,21 +894,30 @@ export default function App() {
         isAdminAuthenticated={isAdminAuthenticated}
       />
 
-      {/* Admin Quick Floating Bar when authenticated */}
+      {/* Persistent Live Admin Bar when authenticated: shows status, edit badge reminder, dashboard trigger and logout */}
       {isAdminAuthenticated && (
-        <div className="fixed bottom-4 right-4 z-40 animate-in fade-in slide-in-from-bottom-2">
-          <button
-            id="admin-floating-quick-btn"
-            onClick={() => setIsAdminDashboardOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3f241c] text-[#eae5da] text-xs font-mono font-bold shadow-xl border-2 border-[#839b64] hover:bg-[#2b1812] transition-all cursor-pointer hover:scale-105 active:scale-95"
-            title="Ouvrir le panneau d'administration de la rédaction"
-          >
-            <Shield className="w-4 h-4 text-[#839b64]" />
-            <span>Admin Six%</span>
-            <span className="w-2 h-2 rounded-full bg-[#839b64] animate-pulse" />
-          </button>
-        </div>
+        <AdminLiveBar
+          onOpenDashboard={() => setIsAdminDashboardOpen(true)}
+          onLogout={handleAdminLogout}
+        />
       )}
+
+      {/* Quick Image Picker Modal (Médiathèque) for in-place live site edits */}
+      <QuickImagePickerModal
+        isOpen={!!pickerTarget}
+        onClose={() => setPickerTarget(null)}
+        onSelectImage={handleSelectNewImage}
+        title={pickerTarget?.title || "Sélectionner une photo avec la médiathèque"}
+        currentUrl={pickerTarget?.currentUrl}
+        articles={articles}
+        categoryLabel={
+          pickerTarget?.type === 'article'
+            ? 'Enquête'
+            : pickerTarget?.type === 'author-avatar'
+            ? 'Journaliste'
+            : 'Rédaction'
+        }
+      />
 
       {/* Admin Login Modal (password required, confidential) */}
       <AdminLoginModal

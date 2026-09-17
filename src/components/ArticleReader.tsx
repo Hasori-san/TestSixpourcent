@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Article } from '../types';
+import { Article, Journalist } from '../types';
 import { 
   ArrowLeft, 
   Bookmark, 
@@ -14,8 +14,10 @@ import {
   Download,
   BookOpen,
   ArrowRight,
-  Printer
+  Printer,
+  Camera
 } from 'lucide-react';
+import { ImageEditBadge } from './admin/ImageEditBadge';
 
 interface ArticleReaderProps {
   article: Article;
@@ -25,6 +27,9 @@ interface ArticleReaderProps {
   allArticles: Article[];
   onSelectArticle: (article: Article) => void;
   isMobileMenuOpen?: boolean;
+  isAdmin?: boolean;
+  onEditImage?: (article: Article) => void;
+  onEditAuthorAvatar?: (journalist: Journalist) => void;
 }
 
 export const ArticleReader: React.FC<ArticleReaderProps> = ({
@@ -35,6 +40,9 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
   allArticles,
   onSelectArticle,
   isMobileMenuOpen = false,
+  isAdmin = false,
+  onEditImage,
+  onEditAuthorAvatar,
 }) => {
   const [fontSizeLevel, setFontSizeLevel] = useState<'base' | 'large' | 'xlarge'>('large');
   const [copyNotification, setCopyNotification] = useState(false);
@@ -224,22 +232,52 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
         </p>
 
         {/* Reporter Credentials Card */}
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-[#ded8cc]/50 border border-[#3f241c]/15 mb-8">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[#ded8cc]/50 border border-[#3f241c]/15 mb-8">
           <div className="flex items-center gap-3.5">
-            <img
-              src={article.author.avatar}
-              alt={article.author.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-[#839b64]"
-            />
+            <div className="relative group/avatar">
+              <img
+                src={article.author.avatar}
+                alt={article.author.name}
+                className="w-12 h-12 rounded-full object-cover border-2 border-[#839b64]"
+              />
+              {isAdmin && onEditAuthorAvatar && (
+                <button
+                  type="button"
+                  onClick={() => onEditAuthorAvatar(article.author)}
+                  title={`Changer la photo de ${article.author.name}`}
+                  className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#3f241c] text-[#839b64] hover:text-white border border-white/50 cursor-pointer shadow-md"
+                >
+                  <Camera className="w-3 h-3" />
+                </button>
+              )}
+            </div>
             <div>
               <p className="text-sm font-bold text-[#3f241c]">{article.author.name}</p>
               <p className="text-xs text-[#3f241c]/70">{article.author.role} • Cellule d'investigation Six%</p>
             </div>
           </div>
+
+          {isAdmin && onEditAuthorAvatar && (
+            <button
+              onClick={() => onEditAuthorAvatar(article.author)}
+              className="text-xs font-mono font-bold text-[#3f241c]/80 hover:text-[#839b64] flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-lg border border-[#3f241c]/20 bg-white/40"
+            >
+              <Camera className="w-3.5 h-3.5 text-[#839b64]" />
+              <span className="hidden sm:inline">Changer l'avatar</span>
+            </button>
+          )}
         </div>
 
         {/* Hero Photo with Caption */}
-        <div className="mb-10 rounded-2xl overflow-hidden shadow-md border border-[#3f241c]/20">
+        <div className="relative mb-10 rounded-2xl overflow-hidden shadow-md border border-[#3f241c]/20 group">
+          {isAdmin && onEditImage && (
+            <ImageEditBadge
+              onClick={() => onEditImage(article)}
+              tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+              className="top-4 right-4 sm:top-5 sm:right-5"
+            />
+          )}
+
           <img
             src={article.heroImage}
             alt={article.title}

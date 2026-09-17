@@ -85,6 +85,18 @@
       "schema": "MediaItem",
       "description": "Collection des visuels et photographies de la médiathèque"
     },
+    "/settings/{settingId}": {
+      "schema": {
+        "title": "SiteSetting",
+        "description": "Paramètres visuels et éditoriaux globaux",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "editorialTeamPhoto": { "type": "string" }
+        }
+      },
+      "description": "Paramètres globaux du site Six Pourcent"
+    },
     "/test/{testId}": {
       "schema": { "$ref": "#/entities/Article" },
       "description": "Collection de test de connectivité Firestore"

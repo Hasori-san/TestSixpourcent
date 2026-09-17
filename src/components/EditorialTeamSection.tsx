@@ -1,13 +1,24 @@
 import React from 'react';
-import { Users, FileSearch, Mail, Phone, Lock, BookOpen } from 'lucide-react';
+import { Users, FileSearch, Mail, Phone, Lock, BookOpen, Camera } from 'lucide-react';
 import { Journalist } from '../types';
+import { ImageEditBadge } from './admin/ImageEditBadge';
 
 interface EditorialTeamSectionProps {
   journalists?: Journalist[];
   onContactClick?: () => void;
+  editorialPhoto?: string;
+  isAdmin?: boolean;
+  onEditEditorialPhoto?: () => void;
+  onEditJournalistAvatar?: (journalist: Journalist) => void;
 }
 
-export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({ journalists = [] }) => {
+export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
+  journalists = [],
+  editorialPhoto = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85',
+  isAdmin = false,
+  onEditEditorialPhoto,
+  onEditJournalistAvatar,
+}) => {
   return (
     <section
       id="section-equipe-redaction"
@@ -38,8 +49,16 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({ jour
           {/* Grande Photo Column */}
           <div className="lg:col-span-6 flex flex-col gap-3">
             <div className="relative rounded-2xl overflow-hidden border-2 border-[#3f241c]/20 shadow-md bg-[#3f241c] group">
+              {isAdmin && onEditEditorialPhoto && (
+                <ImageEditBadge
+                  onClick={onEditEditorialPhoto}
+                  tooltip="Modifier la photo de la rédaction avec la médiathèque"
+                  className="top-4 right-4"
+                />
+              )}
+
               <img
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85"
+                src={editorialPhoto}
                 alt="Conférence de rédaction et analyse de dossiers chez Six%"
                 className="w-full h-[320px] sm:h-[420px] lg:h-[460px] object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -104,19 +123,44 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({ jour
               {journalists.map((j) => (
                 <div
                   key={j.id}
-                  className="bg-[#eae5da] rounded-2xl border border-[#3f241c]/15 p-5 flex flex-col justify-between hover:border-[#839b64]/50 transition-all hover:shadow-md"
+                  className="bg-[#eae5da] rounded-2xl border border-[#3f241c]/15 p-5 flex flex-col justify-between hover:border-[#839b64]/50 transition-all hover:shadow-md relative"
                 >
                   <div>
                     <div className="flex items-start gap-3.5 mb-3.5">
-                      <img
-                        src={j.avatar}
-                        alt={j.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-[#839b64] shrink-0 shadow-xs"
-                      />
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-base text-[#3f241c] leading-tight truncate">
-                          {j.name}
-                        </h4>
+                      <div className="relative group/avatar shrink-0">
+                        <img
+                          src={j.avatar}
+                          alt={j.name}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-[#839b64] shadow-xs"
+                        />
+                        {isAdmin && onEditJournalistAvatar && (
+                          <button
+                            type="button"
+                            onClick={() => onEditJournalistAvatar(j)}
+                            title={`Changer l'avatar de ${j.name} avec la médiathèque`}
+                            className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#3f241c] text-[#839b64] hover:text-white border border-white/40 cursor-pointer shadow-md"
+                          >
+                            <Camera className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="font-extrabold text-base text-[#3f241c] leading-tight truncate">
+                            {j.name}
+                          </h4>
+                          {isAdmin && onEditJournalistAvatar && (
+                            <button
+                              type="button"
+                              onClick={() => onEditJournalistAvatar(j)}
+                              className="text-[10px] font-mono text-[#839b64] hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
+                              title="Modifier la photo"
+                            >
+                              <Camera className="w-2.5 h-2.5" />
+                              <span>Photo</span>
+                            </button>
+                          )}
+                        </div>
                         <p className="text-xs text-[#839b64] font-semibold mt-0.5 leading-snug">
                           {j.role}
                         </p>
@@ -178,3 +222,4 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({ jour
     </section>
   );
 };
+

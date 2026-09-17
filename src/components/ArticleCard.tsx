@@ -1,6 +1,7 @@
 import React from 'react';
-import { Article } from '../types';
-import { Clock, Bookmark, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
+import { Article, Journalist } from '../types';
+import { Clock, Bookmark, ArrowRight, ShieldCheck, FileText, Camera } from 'lucide-react';
+import { ImageEditBadge } from './admin/ImageEditBadge';
 
 interface ArticleCardProps {
   article: Article;
@@ -8,6 +9,9 @@ interface ArticleCardProps {
   isBookmarked: boolean;
   onToggleBookmark: (articleId: string) => void;
   variant?: 'featured' | 'standard' | 'compact';
+  isAdmin?: boolean;
+  onEditImage?: (article: Article) => void;
+  onEditAuthorAvatar?: (journalist: Journalist) => void;
 }
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({
@@ -16,6 +20,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   isBookmarked,
   onToggleBookmark,
   variant = 'standard',
+  isAdmin = false,
+  onEditImage,
+  onEditAuthorAvatar,
 }) => {
   if (variant === 'featured') {
     return (
@@ -25,6 +32,14 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         className="group relative rounded-2xl overflow-hidden bg-[#f4f0e8] border border-[#3f241c]/15 shadow-md hover:shadow-xl transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 cursor-pointer"
       >
         <div className="lg:col-span-7 relative h-64 sm:h-80 lg:h-full overflow-hidden bg-[#3f241c]">
+          {isAdmin && onEditImage && (
+            <ImageEditBadge
+              onClick={() => onEditImage(article)}
+              tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+              className="top-4 left-4 sm:left-auto sm:right-16"
+            />
+          )}
+
           <img
             src={article.heroImage}
             alt={article.title}
@@ -89,12 +104,27 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <img
-                src={article.author.avatar}
-                alt={article.author.name}
-                className="w-8 h-8 rounded-full object-cover border border-[#839b64]"
-              />
+            <div className="flex items-center gap-2.5 relative group/avatar">
+              <div className="relative">
+                <img
+                  src={article.author.avatar}
+                  alt={article.author.name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#839b64]"
+                />
+                {isAdmin && onEditAuthorAvatar && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditAuthorAvatar(article.author);
+                    }}
+                    title={`Changer l'avatar de ${article.author.name}`}
+                    className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[#3f241c] text-[#839b64] hover:text-white border border-white/40 cursor-pointer shadow"
+                  >
+                    <Camera className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
               <span className="text-xs font-bold text-[#3f241c]">
                 {article.author.name}
               </span>
@@ -124,6 +154,14 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
       className="group relative rounded-2xl overflow-hidden bg-[#f4f0e8] border border-[#3f241c]/15 shadow hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer"
     >
       <div className="relative h-48 sm:h-52 overflow-hidden bg-[#3f241c]">
+        {isAdmin && onEditImage && (
+          <ImageEditBadge
+            onClick={() => onEditImage(article)}
+            tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+            className="top-3 right-12"
+          />
+        )}
+
         <img
           src={article.heroImage}
           alt={article.title}
@@ -174,9 +212,31 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         </div>
 
         <div className="mt-5 pt-3 border-t border-[#3f241c]/10 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-mono text-[#3f241c]/70">
-            {article.author.name}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <img
+                src={article.author.avatar}
+                alt={article.author.name}
+                className="w-5 h-5 rounded-full object-cover border border-[#839b64]"
+              />
+              {isAdmin && onEditAuthorAvatar && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditAuthorAvatar(article.author);
+                  }}
+                  title={`Changer l'avatar de ${article.author.name}`}
+                  className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[#3f241c] text-[#839b64] hover:text-white cursor-pointer shadow"
+                >
+                  <Camera className="w-2 h-2" />
+                </button>
+              )}
+            </div>
+            <span className="text-[11px] font-mono text-[#3f241c]/70 truncate max-w-[120px]">
+              {article.author.name}
+            </span>
+          </div>
 
           <button
             id={`btn-read-card-${article.id}`}
@@ -194,3 +254,4 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
     </article>
   );
 };
+

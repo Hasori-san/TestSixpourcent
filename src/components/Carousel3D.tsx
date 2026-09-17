@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Article } from '../types';
+import { Article, Journalist } from '../types';
 import { ChevronLeft, ChevronRight, BookOpen, Clock, Bookmark, ArrowRight } from 'lucide-react';
 
 interface Carousel3DProps {
@@ -7,6 +7,9 @@ interface Carousel3DProps {
   onSelectArticle: (article: Article) => void;
   bookmarkedIds: string[];
   onToggleBookmark: (articleId: string) => void;
+  isAdmin?: boolean;
+  onEditImage?: (article: Article) => void;
+  onEditAuthorAvatar?: (journalist: Journalist) => void;
 }
 
 export const Carousel3D: React.FC<Carousel3DProps> = ({
@@ -14,6 +17,9 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
   onSelectArticle,
   bookmarkedIds,
   onToggleBookmark,
+  isAdmin = false,
+  onEditImage,
+  onEditAuthorAvatar,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
