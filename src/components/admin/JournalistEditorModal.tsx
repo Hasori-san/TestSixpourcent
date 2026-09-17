@@ -223,7 +223,7 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="ex. Claire Vandevelde"
+                placeholder="ex. Aprilia Narducci"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm font-semibold"
               />
             </div>

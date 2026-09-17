@@ -314,7 +314,7 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
             Glissez-déposez vos images ici depuis votre ordinateur
           </h3>
           <p className="text-xs text-[#3f241c]/70">
-            JPG, PNG, WebP, SVG jusqu'à 20 Mo. Les images sont automatiquement stockées et optimisées.
+            JPG, PNG, WebP (ex. portraits des journalistes, photo de l'équipe au Louvre, documents de terrain). Stockage local haute résolution optimisé.
           </p>
         </div>
 

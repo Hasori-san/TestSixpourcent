@@ -65,12 +65,12 @@ export const INITIAL_MEDIA_PRESETS: MediaItem[] = [
   },
   {
     id: 'media-preset-5',
-    name: 'Claire Vandevelde (Grand Reporter)',
-    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-    sizeBytes: 120000,
-    sizeFormatted: '117 Ko',
-    dimensions: '400 × 400',
-    uploadedAt: '01 Septembre 2026',
+    name: 'Aprilia Narducci (Grand Reporter — Portrait au musée)',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=85',
+    sizeBytes: 195000,
+    sizeFormatted: '190 Ko',
+    dimensions: '800 × 1067',
+    uploadedAt: '17 Septembre 2026',
     category: 'Auteurs',
     isPreset: true,
   },
@@ -83,6 +83,17 @@ export const INITIAL_MEDIA_PRESETS: MediaItem[] = [
     dimensions: '1600 × 1067',
     uploadedAt: '05 Septembre 2026',
     category: 'Enquêtes',
+    isPreset: true,
+  },
+  {
+    id: 'media-preset-7',
+    name: 'Équipe de Rédaction Six Pourcent (Galerie d\'Apollon — Musée du Louvre)',
+    url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85',
+    sizeBytes: 540000,
+    sizeFormatted: '527 Ko',
+    dimensions: '1600 × 1067',
+    uploadedAt: '17 Septembre 2026',
+    category: 'Général',
     isPreset: true,
   },
 ];
@@ -122,7 +133,21 @@ export async function getMediaLibrary(): Promise<MediaItem[]> {
           // Seed with initial presets
           seedInitialPresets().then((seeded) => resolve(seeded));
         } else {
-          resolve(stored);
+          const missing = INITIAL_MEDIA_PRESETS.filter(
+            (p) => !stored.some((item) => item.id === p.id)
+          );
+          if (missing.length > 0) {
+            try {
+              const writeTx = db.transaction(STORE_NAME, 'readwrite');
+              const writeStore = writeTx.objectStore(STORE_NAME);
+              missing.forEach((item) => writeStore.put(item));
+            } catch {
+              // ignore write error if transaction fails
+            }
+            resolve([...stored, ...missing]);
+          } else {
+            resolve(stored);
+          }
         }
       };
 

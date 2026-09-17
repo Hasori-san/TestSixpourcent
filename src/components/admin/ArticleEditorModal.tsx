@@ -37,7 +37,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   const [chapeau, setChapeau] = useState('');
   const [category, setCategory] = useState<Category>('Environnement');
   const [categoryTag, setCategoryTag] = useState('Dossier Spécial');
-  const [authorName, setAuthorName] = useState('Claire Vandevelde');
+  const [authorName, setAuthorName] = useState('Aprilia Narducci');
   const [authorRole, setAuthorRole] = useState('Grand reporter & data-investigatrice');
   const [authorAvatar, setAuthorAvatar] = useState(DEFAULT_AVATARS[0]);
   const [publishedAt, setPublishedAt] = useState('17 Septembre 2026');
@@ -364,7 +364,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   type="text"
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="ex. Claire Vandevelde"
+                  placeholder="ex. Aprilia Narducci"
                   className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm"
                 />
               </div>

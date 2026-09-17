@@ -29,7 +29,18 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY_ARTICLES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((art: Article) => {
+            const defaultArt = ARTICLES_DATA.find((da) => da.id === art.id);
+            if (defaultArt) {
+              return {
+                ...art,
+                author: defaultArt.author,
+              };
+            }
+            return art;
+          });
+        }
       }
     } catch (e) {
       console.error('Failed to load custom articles', e);
@@ -57,7 +68,38 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY_JOURNALISTS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((j: Journalist) => {
+            const defaultMatch = DEFAULT_JOURNALISTS.find((dj) => dj.id === j.id);
+            if (defaultMatch) {
+              return {
+                ...j,
+                name: defaultMatch.name,
+                email: defaultMatch.email,
+                bio: defaultMatch.bio,
+              };
+            }
+            if (j.name === 'Claire Vandevelde') {
+              return { ...j, name: 'Aprilia Narducci', email: 'a.narducci@six-pourcent.media' };
+            }
+            if (j.name === 'Marc Delorme') {
+              return { ...j, name: 'Olivier Dos Santos Pereira', email: 'o.dossantospereira@six-pourcent.media' };
+            }
+            if (j.name === 'Sarah Benmoussa') {
+              return { ...j, name: 'Garance Bribosia', email: 'g.bribosia@six-pourcent.media' };
+            }
+            if (j.name === 'Lucas Bernard') {
+              return { ...j, name: 'Héloise Massaux', email: 'h.massaux@six-pourcent.media' };
+            }
+            if (j.name === 'Thomas Lemoine') {
+              return { ...j, name: 'Alya Birkenbaum', email: 'a.birkenbaum@six-pourcent.media' };
+            }
+            if (j.name === 'Hélène Roche') {
+              return { ...j, name: 'Aicha Adghoghi', email: 'a.adghoghi@six-pourcent.media' };
+            }
+            return j;
+          });
+        }
       }
     } catch (e) {
       console.error('Failed to load custom journalists', e);
