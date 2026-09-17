@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ARTICLES_DATA } from './data/articles';
 import { DEFAULT_DONORS, Donor } from './data/donors';
-import { Article, Category } from './types';
+import { DEFAULT_JOURNALISTS } from './data/journalists';
+import { Article, Category, Journalist } from './types';
 import { Navbar, NavTabId } from './components/Navbar';
 import { Carousel3D } from './components/Carousel3D';
 import { ArticleCard } from './components/ArticleCard';
@@ -19,6 +20,7 @@ import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, Shiel
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
 const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
 const STORAGE_KEY_DONORS = 'six_pourcent_donors_db';
+const STORAGE_KEY_JOURNALISTS = 'six_pourcent_journalists_db';
 
 export default function App() {
   // Articles state initialized from local cache or default editorial data
@@ -47,6 +49,20 @@ export default function App() {
       console.error('Failed to load custom donors', e);
     }
     return DEFAULT_DONORS;
+  });
+
+  // Journalists state
+  const [journalists, setJournalists] = useState<Journalist[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_JOURNALISTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load custom journalists', e);
+    }
+    return DEFAULT_JOURNALISTS;
   });
 
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -100,6 +116,15 @@ export default function App() {
       console.error('Failed to persist donors', e);
     }
   }, [donors]);
+
+  // Sync custom journalists to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_JOURNALISTS, JSON.stringify(journalists));
+    } catch (e) {
+      console.error('Failed to persist journalists', e);
+    }
+  }, [journalists]);
 
   // Handle URL hash changes for direct deep linking and back button support
   useEffect(() => {
@@ -288,6 +313,26 @@ export default function App() {
   const handleResetDonors = () => {
     localStorage.removeItem(STORAGE_KEY_DONORS);
     setDonors(DEFAULT_DONORS);
+  };
+
+  // Journalist Management handlers
+  const handleAddJournalist = (newJournalist: Journalist) => {
+    setJournalists((prev) => [newJournalist, ...prev]);
+  };
+
+  const handleUpdateJournalist = (updatedJournalist: Journalist) => {
+    setJournalists((prev) =>
+      prev.map((j) => (j.id === updatedJournalist.id ? updatedJournalist : j))
+    );
+  };
+
+  const handleDeleteJournalist = (id: string) => {
+    setJournalists((prev) => prev.filter((j) => j.id !== id));
+  };
+
+  const handleResetJournalists = () => {
+    localStorage.removeItem(STORAGE_KEY_JOURNALISTS);
+    setJournalists(DEFAULT_JOURNALISTS);
   };
 
   // Filtered articles based on search & category
@@ -535,7 +580,7 @@ export default function App() {
           )}
 
           {/* Présentation de l'équipe de rédaction */}
-          <EditorialTeamSection />
+          <EditorialTeamSection journalists={journalists} />
 
           {/* Bandeau défilant des donateurs et donatrices */}
           <DonorsMarquee donors={donors} />
@@ -610,6 +655,11 @@ export default function App() {
         onAddDonor={handleAddDonor}
         onDeleteDonor={handleDeleteDonor}
         onResetDonors={handleResetDonors}
+        journalists={journalists}
+        onAddJournalist={handleAddJournalist}
+        onUpdateJournalist={handleUpdateJournalist}
+        onDeleteJournalist={handleDeleteJournalist}
+        onResetJournalists={handleResetJournalists}
       />
     </div>
   );

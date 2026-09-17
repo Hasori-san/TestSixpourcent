@@ -21,11 +21,17 @@ import {
   Download,
   Flame,
   FolderOpen,
+  User,
+  Users,
+  Mail,
+  Phone,
+  Lock,
 } from 'lucide-react';
-import { Article, Category } from '../../types';
+import { Article, Category, Journalist } from '../../types';
 import { Donor } from '../../data/donors';
 import { ArticleEditorModal } from './ArticleEditorModal';
 import { MediaLibrary } from './MediaLibrary';
+import { JournalistEditorModal } from './JournalistEditorModal';
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -43,9 +49,14 @@ interface AdminDashboardProps {
   onAddDonor: (donor: Donor) => void;
   onDeleteDonor: (id: string) => void;
   onResetDonors: () => void;
+  journalists: Journalist[];
+  onAddJournalist: (journalist: Journalist) => void;
+  onUpdateJournalist: (journalist: Journalist) => void;
+  onDeleteJournalist: (id: string) => void;
+  onResetJournalists: () => void;
 }
 
-type AdminTab = 'articles' | 'donateurs' | 'media' | 'maintenance';
+type AdminTab = 'articles' | 'journalistes' | 'donateurs' | 'media' | 'maintenance';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   isOpen,
@@ -63,6 +74,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddDonor,
   onDeleteDonor,
   onResetDonors,
+  journalists,
+  onAddJournalist,
+  onUpdateJournalist,
+  onDeleteJournalist,
+  onResetJournalists,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('articles');
   const [searchFilter, setSearchFilter] = useState('');
@@ -70,6 +86,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [articleToEdit, setArticleToEdit] = useState<Article | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Journalists state
+  const [journalistToEdit, setJournalistToEdit] = useState<Journalist | null>(null);
+  const [isJournalistEditorOpen, setIsJournalistEditorOpen] = useState(false);
+  const [quickPhotoJournalist, setQuickPhotoJournalist] = useState<Journalist | null>(null);
+  const [deleteJournalistConfirmId, setDeleteJournalistConfirmId] = useState<string | null>(null);
 
   const handleAssignMediaToArticle = (articleId: string, imageUrl: string, imageCaption?: string) => {
     const found = articles.find((a) => a.id === articleId);
@@ -122,6 +144,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } else {
       onAddArticle(saved);
     }
+  };
+
+  const handleSaveJournalist = (savedJournalist: Journalist) => {
+    const isExisting = journalists.some((j) => j.id === savedJournalist.id);
+    if (isExisting) {
+      onUpdateJournalist(savedJournalist);
+    } else {
+      onAddJournalist(savedJournalist);
+    }
+
+    // Auto-propagate journalist avatar & role to all articles authored by this journalist
+    articles.forEach((art) => {
+      if (art.author.name.toLowerCase() === savedJournalist.name.toLowerCase()) {
+        if (art.author.avatar !== savedJournalist.avatar || art.author.role !== savedJournalist.role) {
+          onUpdateArticle({
+            ...art,
+            author: {
+              ...art.author,
+              name: savedJournalist.name,
+              role: savedJournalist.role,
+              avatar: savedJournalist.avatar,
+            },
+          });
+        }
+      }
+    });
   };
 
   const handleCreateDonor = (e: React.FormEvent) => {
@@ -228,6 +276,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             <span>Dossiers d'enquête ({articles.length})</span>
+          </button>
+
+          <button
+            id="admin-tab-journalistes-btn"
+            onClick={() => setActiveTab('journalistes')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'journalistes'
+                ? 'bg-[#3f241c] text-[#eae5da] shadow-xs'
+                : 'text-[#3f241c]/70 hover:text-[#3f241c] hover:bg-[#eae5da]/60'
+            }`}
+          >
+            <Users className="w-4 h-4 text-[#839b64]" />
+            <span>Journalistes & Rédaction ({journalists.length})</span>
           </button>
 
           <button
@@ -478,7 +539,216 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-          {/* TAB 2: DONORS & MARQUEE MANAGEMENT */}
+          {/* TAB 2: JOURNALISTS & EDITORIAL TEAM MANAGEMENT */}
+          {activeTab === 'journalistes' && (
+            <div className="space-y-6">
+              {/* Header Ribbon */}
+              <div className="bg-[#f4f0e8] p-5 sm:p-6 rounded-2xl border border-[#3f241c]/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#839b64]" />
+                    <h3 className="font-extrabold text-base text-[#3f241c]">
+                      Cellule de Rédaction • Profils des Journalistes
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[#3f241c]/80 mt-1 max-w-2xl">
+                    Gérez chaque journaliste de la rédaction Six% : modifiez leur photo de profil (via la médiathèque ou vos fichiers), leur titre éditorial, leur biographie, leurs expertises et leurs canaux de contact chiffrés.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={onResetJournalists}
+                    className="px-3.5 py-2 rounded-xl border border-[#3f241c]/20 hover:bg-[#eae5da] text-xs font-bold text-[#3f241c] transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Restaurer l'équipe de journalistes initiale"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-[#3f241c]/70" />
+                    <span className="hidden sm:inline">Réinitialiser l'équipe</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setJournalistToEdit(null);
+                      setIsJournalistEditorOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nouveau profil journaliste</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Journalists Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {journalists.map((journalist) => {
+                  const authoredArticles = articles.filter(
+                    (a) => a.author.name.toLowerCase() === journalist.name.toLowerCase()
+                  );
+
+                  return (
+                    <div
+                      key={journalist.id}
+                      className="bg-[#f4f0e8] rounded-2xl border border-[#3f241c]/15 hover:border-[#839b64]/60 transition-all p-5 flex flex-col justify-between shadow-xs hover:shadow-md group relative"
+                    >
+                      <div>
+                        {/* Top: Avatar & Quick Photo Action + Info */}
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="relative group/avatar shrink-0">
+                            <img
+                              src={journalist.avatar}
+                              alt={journalist.name}
+                              className="w-18 h-18 rounded-full object-cover border-3 border-[#839b64] shadow-sm bg-[#3f241c]/10"
+                            />
+                            {/* Quick photo change button overlay */}
+                            <button
+                              type="button"
+                              onClick={() => setQuickPhotoJournalist(journalist)}
+                              className="absolute inset-0 rounded-full bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer text-[9px] font-bold"
+                              title="Changer la photo via la médiathèque"
+                            >
+                              <FolderOpen className="w-4 h-4 mb-0.5 text-[#839b64]" />
+                              <span>Modifier</span>
+                            </button>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <h4 className="font-extrabold text-base text-[#3f241c] truncate">
+                                {journalist.name}
+                              </h4>
+                            </div>
+
+                            <p className="text-xs font-medium text-[#839b64] leading-snug mt-0.5 line-clamp-2">
+                              {journalist.role}
+                            </p>
+
+                            {journalist.joinedYear && (
+                              <span className="inline-block text-[10px] font-mono text-[#3f241c]/60 mt-1">
+                                Rédaction Six% depuis {journalist.joinedYear}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bio Excerpt */}
+                        {journalist.bio && (
+                          <p className="text-xs text-[#3f241c]/80 leading-relaxed mb-3 line-clamp-3 italic">
+                            « {journalist.bio} »
+                          </p>
+                        )}
+
+                        {/* Specialties Tags */}
+                        {journalist.specialties && journalist.specialties.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-4">
+                            {journalist.specialties.map((spec) => (
+                              <span
+                                key={spec}
+                                className="px-2 py-0.5 rounded-md bg-[#eae5da] text-[#3f241c] border border-[#3f241c]/15 text-[10px] font-mono"
+                              >
+                                {spec}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Secure transmission credentials */}
+                        <div className="space-y-1 py-2 border-t border-[#3f241c]/10 text-[11px] font-mono text-[#3f241c]/70">
+                          {journalist.email && (
+                            <div className="flex items-center gap-1.5 truncate" title={journalist.email}>
+                              <Mail className="w-3 h-3 text-[#839b64] shrink-0" />
+                              <span className="truncate">{journalist.email}</span>
+                            </div>
+                          )}
+                          {journalist.signalPhone && (
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Phone className="w-3 h-3 text-[#839b64] shrink-0" />
+                              <span>Signal : {journalist.signalPhone}</span>
+                            </div>
+                          )}
+                          {journalist.pgpFingerprint && (
+                            <div className="flex items-center gap-1.5 truncate" title={journalist.pgpFingerprint}>
+                              <Lock className="w-3 h-3 text-[#839b64] shrink-0" />
+                              <span className="truncate">PGP : {journalist.pgpFingerprint.slice(0, 16)}...</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Footer: Articles Count & Actions */}
+                      <div className="pt-3 border-t border-[#3f241c]/15 flex items-center justify-between gap-2 mt-2">
+                        <span className="text-[11px] font-mono text-[#3f241c]/75 flex items-center gap-1">
+                          <BookOpen className="w-3 h-3 text-[#839b64]" />
+                          <span>{authoredArticles.length} dossier{authoredArticles.length > 1 ? 's' : ''}</span>
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Quick change photo button */}
+                          <button
+                            type="button"
+                            onClick={() => setQuickPhotoJournalist(journalist)}
+                            className="px-2.5 py-1.5 rounded-lg bg-[#eae5da] hover:bg-[#ded8cc] border border-[#3f241c]/20 text-[11px] font-bold text-[#3f241c] flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Modifier uniquement la photo de profil via la médiathèque"
+                          >
+                            <FolderOpen className="w-3 h-3 text-[#839b64]" />
+                            <span>Photo</span>
+                          </button>
+
+                          {/* Full edit button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setJournalistToEdit(journalist);
+                              setIsJournalistEditorOpen(true);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-[#3f241c] hover:bg-[#2b1812] text-[#eae5da] text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                            title="Modifier toutes les informations du profil"
+                          >
+                            <Edit className="w-3 h-3" />
+                            <span>Modifier</span>
+                          </button>
+
+                          {/* Delete button */}
+                          {deleteJournalistConfirmId === journalist.id ? (
+                            <div className="flex items-center gap-1 bg-red-100 p-0.5 rounded-lg border border-red-300">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteJournalist(journalist.id);
+                                  setDeleteJournalistConfirmId(null);
+                                }}
+                                className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold hover:bg-red-700 cursor-pointer"
+                              >
+                                Oui
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteJournalistConfirmId(null)}
+                                className="px-1.5 py-1 bg-gray-200 text-gray-700 rounded text-[10px] cursor-pointer"
+                              >
+                                Non
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteJournalistConfirmId(journalist.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
+                              title="Supprimer ce profil"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: DONORS & MARQUEE MANAGEMENT */}
           {activeTab === 'donateurs' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -689,6 +959,65 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onSave={handleSaveArticle}
         articleToEdit={articleToEdit}
       />
+
+      {/* Journalist Editor Modal (Create or Edit) */}
+      <JournalistEditorModal
+        isOpen={isJournalistEditorOpen}
+        onClose={() => {
+          setIsJournalistEditorOpen(false);
+          setJournalistToEdit(null);
+        }}
+        onSave={handleSaveJournalist}
+        journalistToEdit={journalistToEdit}
+      />
+
+      {/* Sub-modal: Quick Journalist Photo Media Picker */}
+      {quickPhotoJournalist && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 sm:p-6 bg-[#3f241c]/85 backdrop-blur-xs animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setQuickPhotoJournalist(null);
+          }}
+        >
+          <div className="bg-[#eae5da] w-full max-w-4xl rounded-2xl border-2 border-[#3f241c] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="p-4 bg-[#3f241c] text-[#eae5da] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-[#839b64]" />
+                <div>
+                  <h3 className="font-bold text-sm">
+                    Médiathèque • Modifier la photo de profil de {quickPhotoJournalist.name}
+                  </h3>
+                  <p className="text-[11px] font-mono text-[#839b64]">
+                    Sélectionnez une image existante ou téléversez un nouveau portrait depuis votre ordinateur
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickPhotoJournalist(null)}
+                className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center cursor-pointer text-[#eae5da]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+              <MediaLibrary
+                articles={[]}
+                isPickerMode={true}
+                onSelectImage={(url) => {
+                  const updated: Journalist = {
+                    ...quickPhotoJournalist,
+                    avatar: url,
+                  };
+                  handleSaveJournalist(updated);
+                  setQuickPhotoJournalist(null);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -61,3 +61,16 @@ export interface BookmarkItem {
   articleId: string;
   savedAt: string;
 }
+
+export interface Journalist {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  bio: string;
+  specialties: string[];
+  email?: string;
+  pgpFingerprint?: string;
+  signalPhone?: string;
+  joinedYear?: string;
+}
