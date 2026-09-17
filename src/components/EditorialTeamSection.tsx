@@ -1,35 +1,11 @@
-import React, { useState } from 'react';
-import { Users, FileSearch, Maximize2, X, Eye, ShieldCheck } from 'lucide-react';
-import { useAdminMedia } from '../context/AdminMediaContext';
-import { EditableImageBadge } from './admin/EditableImageBadge';
+import React from 'react';
+import { Users, FileSearch } from 'lucide-react';
 
 interface EditorialTeamSectionProps {
   onContactClick?: () => void;
 }
 
-// Fixed canonical image path for the editorial team photo
-const EDITORIAL_TEAM_PHOTO = '/IMG_8297.jpeg';
-
 export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = () => {
-  const { getImageFor } = useAdminMedia();
-  const activeTeamPhoto = getImageFor('team-photo', EDITORIAL_TEAM_PHOTO);
-
-  const [photoSrc, setPhotoSrc] = useState<string>(activeTeamPhoto);
-  const [showLightbox, setShowLightbox] = useState<boolean>(false);
-
-  // Sync photoSrc if activeTeamPhoto changes from admin context
-  React.useEffect(() => {
-    setPhotoSrc(activeTeamPhoto);
-  }, [activeTeamPhoto]);
-
-  // Fallback to high-resolution Galerie d'Apollon Louvre reference if the file is still propagating
-  const handleImageError = () => {
-    const fallbackLouvre = 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Galerie_d%27Apollon_du_Louvre_d%C3%A9serte_2.jpg';
-    if (photoSrc !== fallbackLouvre) {
-      setPhotoSrc(fallbackLouvre);
-    }
-  };
-
   return (
     <section
       id="section-equipe-redaction"
@@ -50,83 +26,49 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = () => {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#3f241c] tracking-tight">
             L'équipe de rédaction
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-[#3f241c]/80 max-w-2xl font-normal">
+          <p className="mt-2 text-sm sm:text-base text-[#3f241c]/80 max-w-2xl">
             Journalistes d'investigation, historiens d'art, juristes et data-analystes unis par une même mission : faire la lumière là où règnent le secret et l'opacité.
           </p>
         </div>
 
         {/* Grid: Grande photo à gauche, Descriptif détaillé à droite */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Grande Photo Column */}
-          <div className="lg:col-span-6 flex flex-col gap-4">
-            <div className="relative rounded-2xl overflow-hidden border-2 border-[#3f241c]/25 shadow-lg bg-[#2b1812] group">
-              {/* Admin quick edit badge */}
-              <EditableImageBadge
-                slotId="team-photo"
-                label="Photo de l'équipe de rédaction"
-                position="top-left"
+          <div className="lg:col-span-6 flex flex-col gap-3">
+            <div className="relative rounded-2xl overflow-hidden border-2 border-[#3f241c]/20 shadow-md bg-[#3f241c] group">
+              <img
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=85"
+                alt="Conférence de rédaction et analyse de dossiers chez Six%"
+                className="w-full h-[320px] sm:h-[420px] lg:h-[460px] object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
               />
 
-              {/* Photo avec cadrage vertical surélevé (center 80%) pour voir nettement les membres de l'équipe et leurs genoux */}
-              <div className="w-full h-[480px] sm:h-[560px] lg:h-[620px] overflow-hidden bg-[#2b1812]">
-                <img
-                  src={photoSrc}
-                  onError={handleImageError}
-                  alt="L'équipe de rédaction de Six% réunie en galerie d'honneur au Musée du Louvre"
-                  referrerPolicy="no-referrer"
-                  style={{
-                    objectPosition: 'center 80%',
-                  }}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
+              {/* Photo Overlay Tag */}
+              <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#3f241c]/85 text-[#eae5da] text-[11px] font-mono backdrop-blur-xs border border-[#eae5da]/20 shadow-xs">
+                <FileSearch className="w-3.5 h-3.5 text-[#839b64]" />
+                <span>Conférence de rédaction • Dossiers en cours</span>
               </div>
 
-              {/* Top Status Overlay */}
-              <div className="absolute top-3 right-3 flex items-center justify-end gap-2 z-10 pointer-events-none">
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#3f241c]/90 text-[#eae5da] text-[11px] font-mono backdrop-blur-xs border border-[#eae5da]/20 shadow pointer-events-auto">
-                  <FileSearch className="w-3.5 h-3.5 text-[#839b64]" />
-                  <span>Équipe de rédaction • Paris</span>
-                </div>
-
-                {/* Lightbox zoom button */}
-                <button
-                  type="button"
-                  onClick={() => setShowLightbox(true)}
-                  className="p-1.5 rounded-lg bg-[#3f241c]/85 hover:bg-[#3f241c] text-[#eae5da] text-xs font-mono font-medium backdrop-blur-xs border border-[#eae5da]/20 shadow transition-all hover:scale-105 cursor-pointer pointer-events-auto"
-                  title="Agrandir la photo en plein écran"
-                >
-                  <Maximize2 className="w-3.5 h-3.5 text-[#eae5da]" />
-                </button>
-              </div>
-
-              {/* Bottom Caption Pill */}
-              <div className="absolute bottom-3 inset-x-3 z-10 pointer-events-none">
-                <div className="px-3 py-1.5 rounded-lg bg-[#2b1812]/85 text-[#eae5da]/90 text-[11px] font-mono backdrop-blur-xs border border-[#eae5da]/15 flex items-center justify-between">
-                  <span>Galerie d'Apollon • Musée du Louvre</span>
-                  <span className="text-[#839b64] font-semibold">Six% 2026</span>
-                </div>
+              {/* Bottom Quote Bar */}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#3f241c] via-[#3f241c]/90 to-transparent p-5 text-[#eae5da]">
+                <p className="text-xs sm:text-sm italic font-serif leading-snug text-[#eae5da]/90">
+                  « Chaque fait est étayé par des preuves matérielles, des pièces déclassifiées et des expertises indépendantes. »
+                </p>
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#839b64] mt-1 font-bold">
+                  Charte déontologique de Munich appliquée
+                </span>
               </div>
             </div>
 
-            {/* Dedicated Editorial Quote Card (Positioned clearly BELOW the photo to preserve 100% visibility of the team and knees) */}
-            <div className="p-4 sm:p-5 rounded-xl bg-[#3f241c] text-[#eae5da] border border-[#3f241c] shadow-sm">
-              <p className="text-xs sm:text-sm italic font-serif leading-relaxed text-[#eae5da]/95">
-                « Chaque fait est étayé par des preuves matérielles, des pièces déclassifiées et des expertises indépendantes. »
-              </p>
-              <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#839b64] mt-2 font-bold">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 inline" />
-                  Charte déontologique de Munich appliquée
-                </span>
-                <span className="text-[#eae5da]/60">Bruxelles • Paris</span>
-              </div>
+            <div className="flex items-center justify-between text-xs text-[#3f241c]/65 font-mono px-1">
+              <span>Cellule permanente d'enquête</span>
+              <span>Paris • Genève • Bruxelles</span>
             </div>
           </div>
 
           {/* Descriptif Column */}
-          <div className="lg:col-span-6 flex flex-col justify-center space-y-5 pt-1">
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#3f241c] leading-snug">
+          <div className="lg:col-span-6 flex flex-col justify-center space-y-5">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#3f241c] leading-snug">
               Une cellule indépendante vouée aux enquêtes de longue haleine
             </h3>
 
@@ -137,63 +79,10 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = () => {
               <p>
                 Des circuits opaques des ports francs aux soupçons de spoliation, en passant par les coulisses des grandes maisons de vente et le trafic de biens culturels, nos enquêteurs décortiquent registres douaniers, contrats confidentiels et analyses scientifiques de laboratoire pour offrir une information irréfutable.
               </p>
-              <p>
-                Chaque enquête est relue par un comité éditorial pluridisciplinaire et soumise à un contre-interrogatoire juridique rigoureux avant publication.
-              </p>
-            </div>
-
-            {/* Pill Highlights */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="p-3.5 rounded-xl bg-[#ded8cc]/70 border border-[#3f241c]/15">
-                <span className="block text-xl sm:text-2xl font-black text-[#3f241c] font-mono">100%</span>
-                <span className="text-xs text-[#3f241c]/70 font-medium">Financement citoyen indépendant</span>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#ded8cc]/70 border border-[#3f241c]/15">
-                <span className="block text-xl sm:text-2xl font-black text-[#3f241c] font-mono">6 à 14</span>
-                <span className="text-xs text-[#3f241c]/70 font-medium">Mois d'investigation par dossier</span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowLightbox(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#3f241c]/10 hover:bg-[#3f241c]/20 text-[#3f241c] text-xs font-mono font-semibold transition-all cursor-pointer active:scale-95"
-              >
-                <Eye className="w-3.5 h-3.5 text-[#839b64]" />
-                Voir la photographie en haute résolution
-              </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Fullscreen Lightbox Modal to inspect the full original image */}
-      {showLightbox && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
-          onClick={() => setShowLightbox(false)}
-        >
-          <div className="relative max-w-5xl max-h-[92vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setShowLightbox(false)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all cursor-pointer"
-              title="Fermer"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <img
-              src={photoSrc}
-              alt="L'équipe de rédaction de Six% - vue complète"
-              className="max-h-[82vh] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-white/10"
-            />
-            <div className="mt-3 text-center text-white/80 font-mono text-xs">
-              L'équipe de rédaction de Six% • Vue haute définition complète (Galerie d'Apollon, Louvre)
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };

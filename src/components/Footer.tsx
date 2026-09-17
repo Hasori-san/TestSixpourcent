@@ -1,17 +1,21 @@
 import React from 'react';
-import { Shield, Lock, FileCheck2, Heart, KeyRound } from 'lucide-react';
+import { Shield, Lock, FileCheck2, Heart } from 'lucide-react';
 import { Category } from '../types';
 import { CATEGORIES } from '../data/articles';
-import { useAdminMedia } from '../context/AdminMediaContext';
 
 interface FooterProps {
   onSelectCategory: (cat: Category) => void;
   onGoHome: () => void;
+  onOpenAdmin: () => void;
+  isAdminAuthenticated?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onGoHome }) => {
-  const { isAdmin, openLoginModal, openMediaLibrary } = useAdminMedia();
-
+export const Footer: React.FC<FooterProps> = ({
+  onSelectCategory,
+  onGoHome,
+  onOpenAdmin,
+  isAdminAuthenticated,
+}) => {
   return (
     <footer id="global-footer" className="bg-[#3f241c] text-[#eae5da] pt-14 pb-10 border-t-4 border-[#839b64]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,18 +101,12 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onGoHome }) =>
             <span>•</span>
             <button
               id="footer-admin-btn"
-              onClick={() => {
-                if (isAdmin) {
-                  openMediaLibrary();
-                } else {
-                  openLoginModal();
-                }
-              }}
-              className="inline-flex items-center gap-1 text-[#839b64] hover:text-[#eae5da] hover:underline transition-colors cursor-pointer font-bold"
-              title={isAdmin ? "Ouvrir la médiathèque d'images" : "Accès réservé à l'administrateur (banque d'images)"}
+              onClick={onOpenAdmin}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eae5da]/10 hover:bg-[#839b64] text-[#eae5da] hover:text-[#3f241c] border border-[#eae5da]/20 hover:border-[#839b64] transition-all cursor-pointer font-bold select-none text-[11px]"
+              title="Accès sécurisé à l'administration du média Six%"
             >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>{isAdmin ? 'Médiathèque (Admin)' : 'Accès Rédaction & Admin'}</span>
+              <Lock className="w-3 h-3 text-[#839b64]" />
+              <span>{isAdminAuthenticated ? 'Espace Admin (Connecté)' : 'Accès Admin'}</span>
             </button>
           </div>
         </div>

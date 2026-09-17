@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ARTICLES_DATA } from './data/articles';
+import { DEFAULT_DONORS, Donor } from './data/donors';
 import { Article, Category } from './types';
 import { Navbar, NavTabId } from './components/Navbar';
 import { Carousel3D } from './components/Carousel3D';
@@ -10,22 +11,43 @@ import { FavoritesModal } from './components/FavoritesModal';
 import { Footer } from './components/Footer';
 import { DonorsMarquee } from './components/DonorsMarquee';
 import { EditorialTeamSection } from './components/EditorialTeamSection';
-import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react';
-import { AdminMediaProvider, useAdminMedia } from './context/AdminMediaContext';
-import { AdminBar } from './components/admin/AdminBar';
-import { MediaLibraryModal } from './components/admin/MediaLibraryModal';
-import { SiteImagesManagerModal } from './components/admin/SiteImagesManagerModal';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { isSessionAdminAuthenticated, setSessionAdminAuthenticated } from './lib/adminAuth';
+import { Newspaper, Sparkles, Filter, Bookmark, AlertCircle, ArrowUpRight, Shield, Lock, Settings } from 'lucide-react';
 
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
+const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
+const STORAGE_KEY_DONORS = 'six_pourcent_donors_db';
 
-function MainAppContent() {
-  const {
-    isAdmin,
-    openLoginModal,
-    openMediaLibrary,
-    toastMessage,
-  } = useAdminMedia();
+export default function App() {
+  // Articles state initialized from local cache or default editorial data
+  const [articles, setArticles] = useState<Article[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_ARTICLES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load custom articles', e);
+    }
+    return ARTICLES_DATA;
+  });
+
+  // Donors state
+  const [donors, setDonors] = useState<Donor[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_DONORS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load custom donors', e);
+    }
+    return DEFAULT_DONORS;
+  });
 
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,24 +64,15 @@ function MainAppContent() {
   const [activeNavTab, setActiveNavTab] = useState<NavTabId>('populaires');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Admin states
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    return isSessionAdminAuthenticated();
+  });
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
-
-  // Global keyboard shortcut for admin access: Ctrl+Shift+A or Cmd+Shift+A
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        e.preventDefault();
-        if (isAdmin) {
-          openMediaLibrary();
-        } else {
-          openLoginModal();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAdmin, openLoginModal, openMediaLibrary]);
 
   // Sync bookmarks to localStorage
   useEffect(() => {
@@ -70,12 +83,30 @@ function MainAppContent() {
     }
   }, [bookmarkedIds]);
 
+  // Sync custom articles to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_ARTICLES, JSON.stringify(articles));
+    } catch (e) {
+      console.error('Failed to persist articles', e);
+    }
+  }, [articles]);
+
+  // Sync custom donors to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donors));
+    } catch (e) {
+      console.error('Failed to persist donors', e);
+    }
+  }, [donors]);
+
   // Handle URL hash changes for direct deep linking and back button support
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash) {
-        const found = ARTICLES_DATA.find((a) => a.slug === hash || a.id === hash);
+        const found = articles.find((a) => a.slug === hash || a.id === hash);
         if (found) {
           setSelectedArticle(found);
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -92,7 +123,7 @@ function MainAppContent() {
 
     window.addEventListener('popstate', handleHashChange);
     return () => window.removeEventListener('popstate', handleHashChange);
-  }, []);
+  }, [articles]);
 
   // Update active navigation tab based on scroll position when on homepage
   useEffect(() => {
@@ -178,10 +209,91 @@ function MainAppContent() {
     setBookmarkedIds([]);
   };
 
+  const handleOpenAdmin = () => {
+    if (isAdminAuthenticated) {
+      setIsAdminDashboardOpen(true);
+    } else {
+      setIsAdminLoginOpen(true);
+    }
+  };
+
+  const handleAdminLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
+    setIsAdminLoginOpen(false);
+    setIsAdminDashboardOpen(true);
+  };
+
+  const handleAdminLogout = () => {
+    setSessionAdminAuthenticated(false);
+    setIsAdminAuthenticated(false);
+    setIsAdminDashboardOpen(false);
+  };
+
+  // Article Management handlers
+  const handleAddArticle = (newArticle: Article) => {
+    setArticles((prev) => [newArticle, ...prev]);
+  };
+
+  const handleUpdateArticle = (updatedArticle: Article) => {
+    setArticles((prev) =>
+      prev.map((art) => (art.id === updatedArticle.id ? updatedArticle : art))
+    );
+    if (selectedArticle && selectedArticle.id === updatedArticle.id) {
+      setSelectedArticle(updatedArticle);
+    }
+  };
+
+  const handleDeleteArticle = (id: string) => {
+    setArticles((prev) => prev.filter((art) => art.id !== id));
+    if (selectedArticle && selectedArticle.id === id) {
+      setSelectedArticle(null);
+      window.history.pushState(null, '', window.location.pathname);
+    }
+  };
+
+  const handleTogglePopular = (id: string) => {
+    setArticles((prev) =>
+      prev.map((art) => (art.id === id ? { ...art, isPopular: !art.isPopular } : art))
+    );
+  };
+
+  const handleToggleFeatured = (id: string) => {
+    setArticles((prev) =>
+      prev.map((art) => (art.id === id ? { ...art, isFeatured: !art.isFeatured } : art))
+    );
+  };
+
+  const handleResetArticles = () => {
+    localStorage.removeItem(STORAGE_KEY_ARTICLES);
+    setArticles(ARTICLES_DATA);
+  };
+
+  const handlePreviewArticle = (article: Article) => {
+    setSelectedArticle(article);
+    setActiveNavTab('lecture');
+    setIsMobileMenuOpen(false);
+    window.location.hash = article.slug;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Donor Management handlers
+  const handleAddDonor = (newDonor: Donor) => {
+    setDonors((prev) => [newDonor, ...prev]);
+  };
+
+  const handleDeleteDonor = (id: string) => {
+    setDonors((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  const handleResetDonors = () => {
+    localStorage.removeItem(STORAGE_KEY_DONORS);
+    setDonors(DEFAULT_DONORS);
+  };
+
   // Filtered articles based on search & category
   const filteredArticles = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return ARTICLES_DATA.filter((article) => {
+    return articles.filter((article) => {
       const matchesCategory = selectedCategory === 'Tous' || article.category === selectedCategory;
       if (!matchesCategory) return false;
 
@@ -196,17 +308,17 @@ function MainAppContent() {
 
       return inTitle || inSubtitle || inChapeau || inAuthor || inCategory || inRevelations;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [articles, searchQuery, selectedCategory]);
 
   // Popular articles specifically for the 3D Carousel
   const popularArticles = useMemo(() => {
-    return ARTICLES_DATA.filter((a) => a.isPopular);
-  }, []);
+    return articles.filter((a) => a.isPopular);
+  }, [articles]);
 
   // Bookmarked articles
   const bookmarkedArticles = useMemo(() => {
-    return ARTICLES_DATA.filter((a) => bookmarkedIds.includes(a.id));
-  }, [bookmarkedIds]);
+    return articles.filter((a) => bookmarkedIds.includes(a.id));
+  }, [articles, bookmarkedIds]);
 
   const handleFocusSearch = () => {
     if (selectedArticle) {
@@ -236,32 +348,7 @@ function MainAppContent() {
   const gridArticles = showFeatured ? filteredArticles.slice(1) : filteredArticles;
 
   return (
-    <div
-      id="app-root-container"
-      className={`min-h-screen bg-[#eae5da] text-[#3f241c] flex flex-col selection:bg-[#839b64] selection:text-[#eae5da] transition-all duration-200 ${
-        isAdmin ? 'pt-8' : ''
-      }`}
-    >
-      {/* WordPress Admin Floating Bar */}
-      <AdminBar />
-
-      {/* Admin Modals */}
-      <MediaLibraryModal />
-      <SiteImagesManagerModal />
-      <AdminLoginModal />
-
-      {/* Admin Feedback Toast */}
-      {toastMessage && (
-        <aside
-          id="admin-toast-notification"
-          aria-label="Notification d'administration"
-          className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-[#1e1e1e] text-[#eae5da] text-xs font-sans font-medium shadow-2xl border border-[#839b64] flex items-center gap-2.5"
-        >
-          <CheckCircle2 className="w-4 h-4 text-[#839b64] shrink-0" />
-          <span>{toastMessage}</span>
-        </aside>
-      )}
-
+    <div className="min-h-screen bg-[#eae5da] text-[#3f241c] flex flex-col selection:bg-[#839b64] selection:text-[#eae5da]">
       {/* Top Navigation using Navbar1 responsive floating pill system */}
       <Navbar
         currentTab={activeNavTab}
@@ -280,7 +367,7 @@ function MainAppContent() {
           onBack={handleBackToOverview}
           isBookmarked={bookmarkedIds.includes(selectedArticle.id)}
           onToggleBookmark={toggleBookmark}
-          allArticles={ARTICLES_DATA}
+          allArticles={articles}
           onSelectArticle={handleSelectArticle}
           isMobileMenuOpen={isMobileMenuOpen}
         />
@@ -451,7 +538,7 @@ function MainAppContent() {
           <EditorialTeamSection />
 
           {/* Bandeau défilant des donateurs et donatrices */}
-          <DonorsMarquee />
+          <DonorsMarquee donors={donors} />
         </main>
       )}
 
@@ -479,15 +566,51 @@ function MainAppContent() {
           }
         }}
         onGoHome={handleBackToOverview}
+        onOpenAdmin={handleOpenAdmin}
+        isAdminAuthenticated={isAdminAuthenticated}
+      />
+
+      {/* Admin Quick Floating Bar when authenticated */}
+      {isAdminAuthenticated && (
+        <div className="fixed bottom-4 right-4 z-40 animate-in fade-in slide-in-from-bottom-2">
+          <button
+            id="admin-floating-quick-btn"
+            onClick={() => setIsAdminDashboardOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3f241c] text-[#eae5da] text-xs font-mono font-bold shadow-xl border-2 border-[#839b64] hover:bg-[#2b1812] transition-all cursor-pointer hover:scale-105 active:scale-95"
+            title="Ouvrir le panneau d'administration de la rédaction"
+          >
+            <Shield className="w-4 h-4 text-[#839b64]" />
+            <span>Admin Six%</span>
+            <span className="w-2 h-2 rounded-full bg-[#839b64] animate-pulse" />
+          </button>
+        </div>
+      )}
+
+      {/* Admin Login Modal (password required, confidential) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        onLoginSuccess={handleAdminLoginSuccess}
+      />
+
+      {/* Full Admin Dashboard & CMS */}
+      <AdminDashboard
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
+        onLogout={handleAdminLogout}
+        articles={articles}
+        onAddArticle={handleAddArticle}
+        onUpdateArticle={handleUpdateArticle}
+        onDeleteArticle={handleDeleteArticle}
+        onTogglePopular={handleTogglePopular}
+        onToggleFeatured={handleToggleFeatured}
+        onResetArticles={handleResetArticles}
+        onPreviewArticle={handlePreviewArticle}
+        donors={donors}
+        onAddDonor={handleAddDonor}
+        onDeleteDonor={handleDeleteDonor}
+        onResetDonors={handleResetDonors}
       />
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <AdminMediaProvider>
-      <MainAppContent />
-    </AdminMediaProvider>
   );
 }

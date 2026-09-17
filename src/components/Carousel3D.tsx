@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 import { ChevronLeft, ChevronRight, BookOpen, Clock, Bookmark, ArrowRight } from 'lucide-react';
-import { useAdminMedia } from '../context/AdminMediaContext';
-import { EditableImageBadge } from './admin/EditableImageBadge';
 
 interface Carousel3DProps {
   articles: Article[];
@@ -17,7 +15,6 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
   bookmarkedIds,
   onToggleBookmark,
 }) => {
-  const { getImageFor } = useAdminMedia();
   const [activeIndex, setActiveIndex] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -310,15 +307,8 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
             >
               {/* Image with Parallax Shift */}
               <div className="relative h-44 sm:h-64 md:h-72 overflow-hidden bg-[#3f241c]">
-                {isActive && (
-                  <EditableImageBadge
-                    slotId={`article-${article.id}-hero`}
-                    label={`Couverture • ${article.title}`}
-                    position="top-left"
-                  />
-                )}
                 <img
-                  src={getImageFor(`article-${article.id}-hero`, article.heroImage)}
+                  src={article.heroImage}
                   alt={article.title}
                   style={{
                     transform: isActive 
@@ -329,7 +319,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
                   className="w-full h-full object-cover brightness-90"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#3f241c] via-[#3f241c]/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#3f241c] via-[#3f241c]/40 to-transparent" />
 
                 {/* Top Badges */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto">

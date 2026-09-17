@@ -61,26 +61,3 @@ export interface BookmarkItem {
   articleId: string;
   savedAt: string;
 }
-
-export interface MediaItem {
-  id: string;
-  filename: string;
-  url: string;
-  title: string;
-  alt?: string;
-  size?: string;
-  mimeType?: string;
-  uploadedAt: string;
-  dimensions?: string;
-}
-
-export interface SiteImageSlot {
-  slotId: string;
-  label: string;
-  group: 'general' | 'articles' | 'authors';
-  currentUrl: string;
-  defaultUrl: string;
-  articleId?: string;
-  description?: string;
-}
-
