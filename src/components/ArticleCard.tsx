@@ -35,7 +35,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           {isAdmin && onEditImage && (
             <ImageEditBadge
               onClick={() => onEditImage(article)}
-              tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+              tooltip={`Modifier la photo de l'article "${article.title}"`}
               className="top-4 left-4 sm:left-auto sm:right-16"
             />
           )}
@@ -157,7 +157,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         {isAdmin && onEditImage && (
           <ImageEditBadge
             onClick={() => onEditImage(article)}
-            tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+            tooltip={`Modifier la photo de l'article "${article.title}"`}
             className="top-3 right-12"
           />
         )}

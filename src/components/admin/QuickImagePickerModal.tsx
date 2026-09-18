@@ -43,7 +43,7 @@ export const QuickImagePickerModal: React.FC<QuickImagePickerModalProps> = ({
   const resolvedCategory =
     categoryLabel ||
     (target?.type === 'article_hero'
-      ? 'Enquête'
+      ? 'Article'
       : target?.type === 'journalist_avatar'
       ? 'Journaliste'
       : target?.type === 'editorial_team_photo'

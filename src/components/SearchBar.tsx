@@ -9,6 +9,7 @@ interface SearchBarProps {
   selectedCategory: Category;
   onCategoryChange: (cat: Category) => void;
   totalResults: number;
+  categories?: { label: string; value: string }[];
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -17,6 +18,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   selectedCategory,
   onCategoryChange,
   totalResults,
+  categories = CATEGORIES,
 }) => {
   return (
     <div id="search-filter-section" className="w-full mb-8">
@@ -31,7 +33,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Rechercher une enquête, un mot-clé (ex: métaux rares, eau, algorithme, finance)..."
+          placeholder="Rechercher un article, un mot-clé (ex: métaux rares, eau, algorithme, finance)..."
           className="w-full pl-12 pr-12 py-3.5 sm:py-4 rounded-2xl bg-[#f4f0e8] text-[#3f241c] placeholder-[#3f241c]/50 text-sm sm:text-base border-2 border-[#3f241c]/20 focus:border-[#839b64] focus:outline-none shadow-sm transition-all"
         />
 
@@ -50,7 +52,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {/* Category Pills (Version originale) */}
       <div className="flex flex-col items-center gap-3 mt-6 max-w-5xl mx-auto">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isSelected = selectedCategory === cat.value;
             return (
               <button
@@ -71,7 +73,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
         <div className="text-xs font-mono text-[#3f241c]/70">
           <span className="font-bold text-[#839b64]">{totalResults}</span>{' '}
-          {totalResults > 1 ? 'enquêtes trouvées' : 'enquête trouvée'}
+          {totalResults > 1 ? 'articles trouvés' : 'article trouvé'}
         </div>
       </div>
     </div>

@@ -66,7 +66,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
             </div>
 
             <div className="flex items-center justify-between text-xs text-[#3f241c]/65 font-mono px-1">
-              <span>Cellule permanente d'enquête</span>
+              <span>Cellule permanente d'investigation</span>
               <span>Paris • Genève • Bruxelles</span>
             </div>
           </div>
@@ -74,7 +74,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
           {/* Descriptif Column */}
           <div className="lg:col-span-6 flex flex-col justify-center space-y-5">
             <h3 className="text-xl sm:text-2xl font-bold text-[#3f241c] leading-snug">
-              Une cellule indépendante vouée aux enquêtes de longue haleine
+              Une cellule indépendante vouée aux articles de longue haleine
             </h3>
 
             <div className="space-y-4 text-sm sm:text-base text-[#3f241c]/85 leading-relaxed font-normal">
@@ -82,7 +82,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
                 Notre rédaction ne vit pas au rythme de l’actualité minute par minute. Fondée par des journalistes chevronnés et des spécialistes du milieu de l’art et de la finance, <strong className="font-semibold text-[#3f241c]">Six%</strong> consacre le temps nécessaire — parfois plus d’un an — pour recouper méticuleusement chaque élément.
               </p>
               <p>
-                Des circuits opaques des ports francs aux soupçons de spoliation, en passant par les coulisses des grandes maisons de vente et le trafic de biens culturels, nos enquêteurs décortiquent registres douaniers, contrats confidentiels et analyses scientifiques de laboratoire pour offrir une information irréfutable.
+                Des circuits opaques des ports francs aux soupçons de spoliation, en passant par les coulisses des grandes maisons de vente et le trafic de biens culturels, nos journalistes décortiquent registres douaniers, contrats confidentiels et analyses scientifiques de laboratoire pour offrir une information irréfutable.
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-[#3f241c] flex items-center gap-2">
                   <Users className="w-5 h-5 text-[#839b64]" />
-                  <span>Les journalistes & enquêteurs de la rédaction</span>
+                  <span>Les journalistes de la rédaction</span>
                 </h3>
                 <p className="text-xs text-[#3f241c]/70 mt-0.5">
                   Signataires de la charte de Munich et membres de la cellule permanente Six%.

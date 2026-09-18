@@ -187,7 +187,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
     <section 
       id="carousel-3d-section"
       className="relative w-full py-10 overflow-hidden"
-      aria-label="Carrousel 3D des enquêtes les plus populaires"
+      aria-label="Carrousel 3D des articles les plus populaires"
     >
       {/* Header of the Carousel */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -210,7 +210,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
             <button
               id="carousel-prev-btn"
               onClick={prevSlide}
-              aria-label="Enquête précédente"
+              aria-label="Article précédent"
               className="p-3 rounded-full border-2 border-[#3f241c]/20 bg-[#eae5da] hover:bg-[#839b64] hover:text-[#eae5da] text-[#3f241c] transition-all duration-200 shadow-sm cursor-pointer active:scale-95"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -221,7 +221,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
             <button
               id="carousel-next-btn"
               onClick={nextSlide}
-              aria-label="Enquête suivante"
+              aria-label="Article suivant"
               className="p-3 rounded-full border-2 border-[#3f241c]/20 bg-[#eae5da] hover:bg-[#839b64] hover:text-[#eae5da] text-[#3f241c] transition-all duration-200 shadow-sm cursor-pointer active:scale-95"
             >
               <ChevronRight className="w-5 h-5" />
@@ -411,7 +411,7 @@ export const Carousel3D: React.FC<Carousel3DProps> = ({
             key={art.id}
             id={`carousel-dot-${idx}`}
             onClick={() => setActiveIndex(idx)}
-            aria-label={`Aller à l'enquête ${idx + 1}`}
+            aria-label={`Aller à l'article ${idx + 1}`}
             className={`transition-all duration-300 rounded-full cursor-pointer ${
               idx === activeIndex 
                 ? 'w-8 h-2.5 bg-[#839b64]' 

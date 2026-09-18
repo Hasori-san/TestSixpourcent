@@ -315,11 +315,13 @@ export const ARTICLES_DATA: Article[] = [
   }
 ];
 
-export const CATEGORIES: { label: string; value: import('../types').Category }[] = [
-  { label: 'Toutes les enquêtes', value: 'Tous' },
+export const DEFAULT_CATEGORIES: { label: string; value: string }[] = [
+  { label: 'Tous les articles', value: 'Tous' },
   { label: 'Environnement & Ressources', value: 'Environnement' },
   { label: 'Surveillance & Libertés', value: 'Surveillance & Tech' },
   { label: 'Pouvoir & Finance', value: 'Pouvoir & Finance' },
   { label: 'Santé & Industrie', value: 'Santé & Industrie' },
   { label: 'Société & Démocratie', value: 'Société' },
 ];
+
+export const CATEGORIES = DEFAULT_CATEGORIES;

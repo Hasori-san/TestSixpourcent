@@ -181,7 +181,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
             <button
               id="reader-share-btn"
               onClick={handleShare}
-              title="Partager l'enquête"
+              title="Partager l'article"
               className="p-2 rounded-lg bg-[#ded8cc] hover:bg-[#839b64]/20 text-[#3f241c] transition-colors cursor-pointer relative"
             >
               <Share2 className="w-4 h-4" />
@@ -196,7 +196,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
             <button
               id="reader-print-btn"
               onClick={handlePrint}
-              title="Imprimer l'enquête"
+              title="Imprimer l'article"
               className="hidden sm:inline-flex p-2 rounded-lg bg-[#ded8cc] hover:bg-[#839b64]/20 text-[#3f241c] transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4" />
@@ -273,7 +273,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
           {isAdmin && onEditImage && (
             <ImageEditBadge
               onClick={() => onEditImage(article)}
-              tooltip={`Modifier la photo de l'enquête "${article.title}"`}
+              tooltip={`Modifier la photo de l'article "${article.title}"`}
               className="top-4 right-4 sm:top-5 sm:right-5"
             />
           )}

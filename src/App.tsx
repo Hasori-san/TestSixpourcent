@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ARTICLES_DATA } from './data/articles';
+import { ARTICLES_DATA, CATEGORIES } from './data/articles';
 import { DEFAULT_DONORS, Donor } from './data/donors';
 import { DEFAULT_JOURNALISTS } from './data/journalists';
 import { Article, Category, Journalist } from './types';
@@ -42,6 +42,7 @@ export type ImagePickerTarget =
 
 const STORAGE_KEY_BOOKMARKS = 'six_pourcent_bookmarked_ids';
 const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
+const STORAGE_KEY_CATEGORIES = 'six_pourcent_categories_db';
 const STORAGE_KEY_DONORS = 'six_pourcent_donors_db';
 const STORAGE_KEY_JOURNALISTS = 'six_pourcent_journalists_db';
 
@@ -60,6 +61,20 @@ export default function App() {
       console.error('Failed to load custom articles', e);
     }
     return ARTICLES_DATA;
+  });
+
+  // Dynamic thematic categories state
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load custom categories', e);
+    }
+    return CATEGORIES;
   });
 
   // Donors state
@@ -171,6 +186,15 @@ export default function App() {
       console.error('Failed to persist articles', e);
     }
   }, [articles]);
+
+  // Sync custom categories to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
+    } catch (e) {
+      console.error('Failed to persist categories', e);
+    }
+  }, [categories]);
 
   // Sync custom donors to localStorage
   useEffect(() => {
@@ -399,6 +423,29 @@ export default function App() {
     deleteArticleFromCloud(id).catch((err) =>
       console.warn('[Firebase Cloud] Erreur suppression article:', err)
     );
+  };
+
+  // Category Management handlers
+  const handleAddCategory = (newCat: { label: string; value: string }) => {
+    setCategories((prev) => {
+      if (prev.some((c) => c.value.toLowerCase() === newCat.value.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, newCat];
+    });
+  };
+
+  const handleDeleteCategory = (catValue: string) => {
+    if (catValue === 'Tous') return;
+    setCategories((prev) => prev.filter((c) => c.value !== catValue));
+    if (selectedCategory === catValue) {
+      setSelectedCategory('Tous');
+    }
+  };
+
+  const handleResetCategories = () => {
+    localStorage.removeItem(STORAGE_KEY_CATEGORIES);
+    setCategories(CATEGORIES);
   };
 
   const handleTogglePopular = (id: string) => {
@@ -745,10 +792,10 @@ export default function App() {
             <div id="section-separator-database" className="border-t-2 border-[#3f241c]/15 pt-10 scroll-mt-20">
               <div className="text-center mb-6">
                 <span className="text-xs font-mono text-[#839b64] uppercase font-bold tracking-widest">
-                  Base de données des enquêtes
+                  Base de données des articles
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-[#3f241c] mt-1">
-                  Explorer tous nos dossiers
+                  Explorer tous nos articles
                 </h2>
               </div>
 
@@ -758,15 +805,16 @@ export default function App() {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
                 totalResults={filteredArticles.length}
+                categories={categories}
               />
 
               {/* No results notice */}
               {filteredArticles.length === 0 && (
                 <div className="py-16 text-center bg-[#f4f0e8] rounded-2xl border-2 border-dashed border-[#3f241c]/20 p-8 my-6">
                   <AlertCircle className="w-12 h-12 text-[#3f241c]/40 mx-auto mb-3" />
-                  <h3 className="text-lg font-bold text-[#3f241c]">Aucune enquête ne correspond à votre recherche</h3>
+                  <h3 className="text-lg font-bold text-[#3f241c]">Aucun article ne correspond à votre recherche</h3>
                   <p className="text-sm text-[#3f241c]/70 mt-1 max-w-md mx-auto">
-                    Essayez d'autres mots-clés ou sélectionnez une autre catégorie pour explorer nos dossiers.
+                    Essayez d'autres mots-clés ou sélectionnez une autre catégorie pour explorer nos articles.
                   </p>
                   <button
                     onClick={() => {
@@ -846,7 +894,7 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-[#3f241c]">
-                      Vous avez {bookmarkedArticles.length} {bookmarkedArticles.length > 1 ? 'enquêtes sauvegardées' : 'enquête sauvegardée'}
+                      Vous avez {bookmarkedArticles.length} {bookmarkedArticles.length > 1 ? 'articles sauvegardés' : 'article sauvegardé'}
                     </h3>
                     <p className="text-xs sm:text-sm text-[#3f241c]/70">
                       Reprenez vos lectures où vous vous êtes arrêté, sans distraction.
@@ -905,6 +953,7 @@ export default function App() {
         onGoHome={handleBackToOverview}
         onOpenAdmin={handleOpenAdmin}
         isAdminAuthenticated={isAdminAuthenticated}
+        categories={categories}
       />
 
       {/* Persistent Live Admin Bar when authenticated: shows status, edit badge reminder, dashboard trigger and logout */}
@@ -925,7 +974,7 @@ export default function App() {
         articles={articles}
         categoryLabel={
           pickerTarget?.type === 'article'
-            ? 'Enquête'
+            ? 'Article'
             : pickerTarget?.type === 'author-avatar'
             ? 'Journaliste'
             : 'Rédaction'
@@ -961,6 +1010,10 @@ export default function App() {
         onUpdateJournalist={handleUpdateJournalist}
         onDeleteJournalist={handleDeleteJournalist}
         onResetJournalists={handleResetJournalists}
+        categories={categories}
+        onAddCategory={handleAddCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onResetCategories={handleResetCategories}
       />
     </div>
   );

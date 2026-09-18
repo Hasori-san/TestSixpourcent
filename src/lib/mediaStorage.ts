@@ -16,7 +16,7 @@ export interface MediaItem {
   height?: number;
   dimensions?: string;
   uploadedAt: string;
-  category: 'Enquêtes' | 'Auteurs' | 'Documents' | 'Général';
+  category: 'Articles' | 'Enquêtes' | 'Auteurs' | 'Documents' | 'Général';
   isPreset?: boolean;
 }
 

@@ -78,7 +78,7 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.type.startsWith('image/')) {
-          const item = await processUploadedImage(file, 'Enquêtes');
+          const item = await processUploadedImage(file, 'Articles');
           await saveMediaItem(item);
           newItems.push(item);
         }
@@ -244,7 +244,10 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
   };
 
   const filteredMedia = mediaList.filter((m) => {
-    const matchesCategory = selectedCategory === 'Tous' || m.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'Tous' ||
+      m.category === selectedCategory ||
+      (selectedCategory === 'Articles' && m.category === 'Enquêtes');
     if (!matchesCategory) return false;
     if (!searchQuery.trim()) return true;
     return m.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -330,7 +333,7 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-          {['Tous', 'Enquêtes', 'Auteurs', 'Documents', 'Général'].map((cat) => (
+          {['Tous', 'Articles', 'Auteurs', 'Documents', 'Général'].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}

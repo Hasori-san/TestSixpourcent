@@ -34,9 +34,9 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
               <Bookmark className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#3f241c]">Mes Enquêtes Sauvegardées</h2>
+              <h2 className="text-xl font-bold text-[#3f241c]">Mes Articles Sauvegardés</h2>
               <p className="text-xs text-[#3f241c]/70 font-mono">
-                {bookmarkedArticles.length} {bookmarkedArticles.length > 1 ? 'dossiers enregistrés' : 'dossier enregistré'} pour lecture ultérieure
+                {bookmarkedArticles.length} {bookmarkedArticles.length > 1 ? 'articles enregistrés' : 'article enregistré'} pour lecture ultérieure
               </p>
             </div>
           </div>
@@ -58,7 +58,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
               <div className="w-16 h-16 rounded-full bg-[#ded8cc] flex items-center justify-center text-[#3f241c]/40 mx-auto mb-4">
                 <Bookmark className="w-8 h-8" />
               </div>
-              <h3 className="text-lg font-bold text-[#3f241c] mb-1">Aucune enquête sauvegardée</h3>
+              <h3 className="text-lg font-bold text-[#3f241c] mb-1">Aucun article sauvegardé</h3>
               <p className="text-sm text-[#3f241c]/70 max-w-sm mx-auto">
                 Cliquez sur l'icône marque-page sur n'importe quel article pour l'ajouter à vos lectures privilégiées.
               </p>

@@ -9,6 +9,7 @@ interface ArticleEditorModalProps {
   onClose: () => void;
   onSave: (article: Article) => void;
   articleToEdit?: Article | null;
+  categories?: { label: string; value: string }[];
 }
 
 const DEFAULT_AVATARS = [
@@ -31,6 +32,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   onClose,
   onSave,
   articleToEdit,
+  categories = CATEGORIES,
 }) => {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -87,14 +89,14 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       setSubtitle('');
       setChapeau('');
       setCategory('Environnement');
-      setCategoryTag('Enquête exclusive');
+      setCategoryTag('Article exclusif');
       setAuthorName('Cellule Investigation Six%');
       setAuthorRole('Journaliste d\'investigation');
       setAuthorAvatar(DEFAULT_AVATARS[0]);
       setPublishedAt('17 Septembre 2026');
       setReadTimeMinutes(8);
       setHeroImage(SUGGESTED_HERO_IMAGES[0].url);
-      setHeroImageCaption('Document d\'investigation confidentiel');
+      setHeroImageCaption('Photographie / illustration exclusive');
       setIsPopular(false);
       setIsFeatured(false);
       setInvestigationDays(150);
@@ -124,7 +126,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !chapeau.trim()) {
-      alert('Veuillez remplir au moins le titre et le chapô de l\'enquête.');
+      alert('Veuillez remplir au moins le titre et le chapô de l\'article.');
       return;
     }
 
@@ -153,7 +155,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
 
         return {
           title: secTitle || undefined,
-          paragraphs: paras.length > 0 ? paras : ['Détails complets de l\'enquête vérifiés par la rédaction.'],
+          paragraphs: paras.length > 0 ? paras : ['Détails complets de l\'article vérifiés par la rédaction.'],
         };
       });
 
@@ -161,7 +163,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       id: articleToEdit?.id || `art-custom-${Date.now()}`,
       slug,
       title: title.trim(),
-      subtitle: subtitle.trim() || 'Enquête approfondie par la rédaction de Six%',
+      subtitle: subtitle.trim() || 'Article approfondi par la rédaction de Six%',
       chapeau: chapeau.trim(),
       category,
       categoryTag: categoryTag.trim() || 'Dossier Spécial',
@@ -176,14 +178,14 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       heroImageCaption: heroImageCaption.trim() || 'Photographie / document exclusif',
       isPopular,
       isFeatured,
-      investigationDays: Number(investigationDays) || 90,
-      leakedDocumentsCount: Number(leakedDocumentsCount) || 12,
+      investigationDays: articleToEdit?.investigationDays || Number(investigationDays) || 90,
+      leakedDocumentsCount: articleToEdit?.leakedDocumentsCount || Number(leakedDocumentsCount) || 12,
       audioDuration: `${Math.round(readTimeMinutes * 0.9)} min`,
-      keyRevelations: keyRevelations.length > 0 ? keyRevelations : ['Enquête complète disponible.'],
+      keyRevelations: keyRevelations.length > 0 ? keyRevelations : ['Article complet disponible.'],
       sections: parsedSections.length > 0 ? parsedSections : [
         {
           title: 'I. Le rapport d\'investigation',
-          paragraphs: ['L\'enquête a été soumise à un triple recoupement documentaire avant publication.'],
+          paragraphs: ['L\'article a été soumis à un triple recoupement documentaire avant publication.'],
         },
       ],
       sourcesCount: Math.round(Number(leakedDocumentsCount) * 0.75) + 3,
@@ -194,13 +196,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
     onClose();
   };
 
-  const validCategories: Category[] = [
-    'Environnement',
-    'Surveillance & Tech',
-    'Pouvoir & Finance',
-    'Santé & Industrie',
-    'Société',
-  ];
+  const availableCategories = categories.filter((c) => c.value !== 'Tous');
 
   return (
     <div
@@ -219,7 +215,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                 Gestion Éditoriale Six%
               </span>
               <h3 className="text-base font-bold text-[#eae5da]">
-                {articleToEdit ? 'Modifier l\'enquête' : 'Créer un nouveau dossier d\'investigation'}
+                {articleToEdit ? 'Modifier l\'article' : 'Rédiger un nouvel article'}
               </h3>
             </div>
           </div>
@@ -236,12 +232,12 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           {/* Section: Titres */}
           <div className="space-y-4">
             <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold border-b border-[#3f241c]/15 pb-1">
-              1. En-tête & Définition du dossier
+              1. En-tête & Définition de l'article
             </h4>
 
             <div>
               <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
-                Titre principal de l'enquête *
+                Titre principal de l'article *
               </label>
               <input
                 type="text"
@@ -297,11 +293,14 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   onChange={(e) => setCategory(e.target.value as Category)}
                   className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm"
                 >
-                  {validCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                  {availableCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
                     </option>
                   ))}
+                  {!availableCategories.some((c) => c.value === category) && (
+                    <option value={category}>{category}</option>
+                  )}
                 </select>
               </div>
 
@@ -349,10 +348,10 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Section: Auteur & Données d'enquête */}
+          {/* Section: Auteur & Données */}
           <div className="space-y-4">
             <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold border-b border-[#3f241c]/15 pb-1">
-              3. Journaliste & Métriques d'investigation
+              3. Journaliste & Temps de lecture
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -387,7 +386,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-bold font-mono uppercase text-[#3f241c]">
-                  Photo du journaliste / enquêteur
+                  Photo du journaliste / auteur
                 </label>
                 <button
                   type="button"
@@ -432,10 +431,10 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-bold font-mono uppercase text-[#3f241c] mb-1">
-                  Temps lecture (min)
+                  Temps de lecture (min)
                 </label>
                 <input
                   type="number"
@@ -443,33 +442,20 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   max="60"
                   value={readTimeMinutes}
                   onChange={(e) => setReadTimeMinutes(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-sm font-mono"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-sm font-mono"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold font-mono uppercase text-[#3f241c] mb-1">
-                  Jours d'enquête
+                  Date de publication
                 </label>
                 <input
-                  type="number"
-                  min="1"
-                  value={investigationDays}
-                  onChange={(e) => setInvestigationDays(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-sm font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold font-mono uppercase text-[#3f241c] mb-1">
-                  Documents vérifiés
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={leakedDocumentsCount}
-                  onChange={(e) => setLeakedDocumentsCount(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-sm font-mono"
+                  type="text"
+                  value={publishedAt}
+                  onChange={(e) => setPublishedAt(e.target.value)}
+                  placeholder="ex. 17 Septembre 2026"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-sm"
                 />
               </div>
             </div>
@@ -602,7 +588,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           {/* Section: Contenu */}
           <div className="space-y-2">
             <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold border-b border-[#3f241c]/15 pb-1">
-              6. Corps de l'enquête (Markdown / Paragraphes)
+              6. Corps de l'article (Markdown / Paragraphes)
             </h4>
             <p className="text-[11px] text-[#3f241c]/70">
               Utilisez <code>## Titre de section</code> pour les sous-titres, et séparez les sections par <code>---</code> si souhaité.
@@ -630,7 +616,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               className="px-5 py-2.5 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              <span>{articleToEdit ? 'Mettre à jour l\'enquête' : 'Publier le dossier'}</span>
+              <span>{articleToEdit ? 'Enregistrer les modifications' : 'Publier l\'article'}</span>
             </button>
           </div>
         </form>

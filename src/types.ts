@@ -1,10 +1,10 @@
-export type Category = 
-  | 'Tous'
-  | 'Environnement'
-  | 'Surveillance & Tech'
-  | 'Pouvoir & Finance'
-  | 'Santé & Industrie'
-  | 'Société';
+export type Category = string;
+
+export interface CategoryDefinition {
+  label: string;
+  value: string;
+  description?: string;
+}
 
 export interface LeakedDocument {
   title: string;

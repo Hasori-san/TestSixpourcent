@@ -6,9 +6,6 @@ import {
   Image as ImageIcon,
   User,
   Shield,
-  Mail,
-  Lock,
-  Phone,
   Tag,
   Plus,
   Trash2,
@@ -45,9 +42,6 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
   const [bio, setBio] = useState('');
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [newSpecialty, setNewSpecialty] = useState('');
-  const [email, setEmail] = useState('');
-  const [pgpFingerprint, setPgpFingerprint] = useState('');
-  const [signalPhone, setSignalPhone] = useState('');
   const [joinedYear, setJoinedYear] = useState('2024');
 
   // Media picker sub-modal
@@ -60,9 +54,6 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
       setAvatar(journalistToEdit.avatar);
       setBio(journalistToEdit.bio);
       setSpecialties(journalistToEdit.specialties || []);
-      setEmail(journalistToEdit.email || '');
-      setPgpFingerprint(journalistToEdit.pgpFingerprint || '');
-      setSignalPhone(journalistToEdit.signalPhone || '');
       setJoinedYear(journalistToEdit.joinedYear || '2024');
     } else {
       setName('');
@@ -70,9 +61,6 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
       setAvatar(SUGGESTED_AVATARS[0].url);
       setBio('');
       setSpecialties(['Investigation']);
-      setEmail('');
-      setPgpFingerprint('');
-      setSignalPhone('');
       setJoinedYear(new Date().getFullYear().toString());
     }
   }, [journalistToEdit, isOpen]);
@@ -105,9 +93,6 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
       avatar: avatar.trim() || SUGGESTED_AVATARS[0].url,
       bio: bio.trim(),
       specialties: specialties.length > 0 ? specialties : ['Investigation'],
-      email: email.trim() || undefined,
-      pgpFingerprint: pgpFingerprint.trim() || undefined,
-      signalPhone: signalPhone.trim() || undefined,
       joinedYear: joinedYear.trim() || undefined,
     };
 
@@ -213,8 +198,8 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
           </div>
 
           {/* Section 2: Identité & Rôle */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="sm:col-span-5">
               <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
                 Nom complet
               </label>
@@ -228,7 +213,7 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-4">
               <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
                 Rôle éditorial / Titre
               </label>
@@ -241,12 +226,26 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm"
               />
             </div>
+
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-[#839b64]" />
+                <span>Année d'arrivée</span>
+              </label>
+              <input
+                type="text"
+                value={joinedYear}
+                onChange={(e) => setJoinedYear(e.target.value)}
+                placeholder="2024"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm font-mono"
+              />
+            </div>
           </div>
 
           {/* Section 3: Biographie */}
           <div>
             <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
-              Biographie & Parcours d'investigation
+              Biographie & Parcours journalistique
             </label>
             <textarea
               value={bio}
@@ -302,72 +301,6 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 <span>Ajouter</span>
               </button>
-            </div>
-          </div>
-
-          {/* Section 5: Coordonnées sécurisées & Intégration */}
-          <div className="p-4 rounded-2xl bg-[#f4f0e8] border border-[#3f241c]/15 space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase text-[#839b64] flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Canaux de transmission sécurisée & Rédaction</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-[#3f241c] mb-1 flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-[#839b64]" />
-                  <span>Adresse e-mail chiffrée</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nom@six-pourcent.media"
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#eae5da] border border-[#3f241c]/25 text-xs outline-none font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-[#3f241c] mb-1 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-[#839b64]" />
-                  <span>Ligne Signal (chiffrée)</span>
-                </label>
-                <input
-                  type="text"
-                  value={signalPhone}
-                  onChange={(e) => setSignalPhone(e.target.value)}
-                  placeholder="+33 6 ** ** ** **"
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#eae5da] border border-[#3f241c]/25 text-xs outline-none font-mono"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] font-mono font-bold text-[#3f241c] mb-1 flex items-center gap-1">
-                  <Lock className="w-3 h-3 text-[#839b64]" />
-                  <span>Empreinte PGP publique</span>
-                </label>
-                <input
-                  type="text"
-                  value={pgpFingerprint}
-                  onChange={(e) => setPgpFingerprint(e.target.value)}
-                  placeholder="ex. 4F8A 29D1 8C7B 301E 998A E83B 21A5 7F04"
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#eae5da] border border-[#3f241c]/25 text-xs outline-none font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-[#3f241c] mb-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-[#839b64]" />
-                  <span>Année d'intégration à Six%</span>
-                </label>
-                <input
-                  type="text"
-                  value={joinedYear}
-                  onChange={(e) => setJoinedYear(e.target.value)}
-                  placeholder="2023"
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#eae5da] border border-[#3f241c]/25 text-xs outline-none font-mono"
-                />
-              </div>
             </div>
           </div>
 
@@ -437,3 +370,4 @@ export const JournalistEditorModal: React.FC<JournalistEditorModalProps> = ({
     </div>
   );
 };
+

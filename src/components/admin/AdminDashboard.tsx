@@ -23,12 +23,11 @@ import {
   FolderOpen,
   User,
   Users,
-  Mail,
-  Phone,
-  Lock,
+  Tag,
   Database,
 } from 'lucide-react';
 import { Article, Category, Journalist } from '../../types';
+import { CATEGORIES } from '../../data/articles';
 import { Donor } from '../../data/donors';
 import { ArticleEditorModal } from './ArticleEditorModal';
 import { MediaLibrary } from './MediaLibrary';
@@ -55,9 +54,13 @@ interface AdminDashboardProps {
   onUpdateJournalist: (journalist: Journalist) => void;
   onDeleteJournalist: (id: string) => void;
   onResetJournalists: () => void;
+  categories?: { label: string; value: string }[];
+  onAddCategory?: (category: { label: string; value: string }) => void;
+  onDeleteCategory?: (categoryValue: string) => void;
+  onResetCategories?: () => void;
 }
 
-type AdminTab = 'articles' | 'journalistes' | 'donateurs' | 'media' | 'maintenance';
+type AdminTab = 'articles' | 'categories' | 'journalistes' | 'donateurs' | 'media' | 'maintenance';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   isOpen,
@@ -80,6 +83,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateJournalist,
   onDeleteJournalist,
   onResetJournalists,
+  categories = CATEGORIES,
+  onAddCategory,
+  onDeleteCategory,
+  onResetCategories,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('articles');
   const [searchFilter, setSearchFilter] = useState('');
@@ -87,6 +94,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [articleToEdit, setArticleToEdit] = useState<Article | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Category management state
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [newCatValue, setNewCatValue] = useState('');
+  const [categoryDeleteConfirm, setCategoryDeleteConfirm] = useState<string | null>(null);
+  const categoriesList = categories && categories.length > 0 ? categories : CATEGORIES;
 
   // Journalists state
   const [journalistToEdit, setJournalistToEdit] = useState<Journalist | null>(null);
@@ -245,7 +258,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className="px-3.5 py-2 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouvelle enquête</span>
+            <span className="hidden sm:inline">Nouvel article</span>
             <span className="sm:hidden">Créer</span>
           </button>
 
@@ -283,7 +296,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Dossiers d'enquête ({articles.length})</span>
+            <span>Articles & Dossiers ({articles.length})</span>
+          </button>
+
+          <button
+            id="admin-tab-categories-btn"
+            onClick={() => setActiveTab('categories')}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'categories'
+                ? 'bg-[#3f241c] text-[#eae5da] shadow-xs'
+                : 'text-[#3f241c]/70 hover:text-[#3f241c] hover:bg-[#eae5da]/60'
+            }`}
+          >
+            <Tag className="w-4 h-4 text-[#839b64]" />
+            <span>Catégories ({categoriesList.length})</span>
           </button>
 
           <button
@@ -384,12 +410,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     className="px-3 py-1.5 rounded-xl bg-[#eae5da] border border-[#3f241c]/20 text-xs font-medium text-[#3f241c] outline-none"
                   >
-                    <option value="Tous">Toutes les catégories</option>
-                    <option value="Environnement">Environnement</option>
-                    <option value="Surveillance & Tech">Surveillance & Tech</option>
-                    <option value="Pouvoir & Finance">Pouvoir & Finance</option>
-                    <option value="Santé & Industrie">Santé & Industrie</option>
-                    <option value="Société">Société</option>
+                    {categoriesList.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -398,7 +423,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="bg-[#f4f0e8] rounded-2xl border border-[#3f241c]/15 overflow-hidden shadow-xs">
                 <div className="p-4 border-b border-[#3f241c]/15 flex items-center justify-between bg-[#ded8cc]/50">
                   <h3 className="font-extrabold text-sm text-[#3f241c]">
-                    Enquêtes enregistrées ({filteredArticles.length})
+                    Articles enregistrés ({filteredArticles.length})
                   </h3>
                   <span className="text-xs font-mono text-[#3f241c]/60">
                     Cliquez sur les étoiles pour basculer la une ou le carrousel 3D
@@ -407,7 +432,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {filteredArticles.length === 0 ? (
                   <div className="p-12 text-center text-xs text-[#3f241c]/70 space-y-3">
-                    <p>Aucune enquête ne correspond à ce filtre.</p>
+                    <p>Aucun article ne correspond à ce filtre.</p>
                     <button
                       onClick={() => {
                         setSearchFilter('');
@@ -491,7 +516,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onClose();
                             }}
                             className="p-2 rounded-xl bg-[#eae5da] border border-[#3f241c]/20 text-[#3f241c] hover:bg-[#3f241c] hover:text-[#eae5da] transition-colors cursor-pointer"
-                            title="Lire l'enquête en mode lecteur public"
+                            title="Lire l'article en mode lecteur public"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </button>
@@ -501,7 +526,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             type="button"
                             onClick={() => handleOpenEditArticle(article)}
                             className="p-2 rounded-xl bg-[#839b64]/20 border border-[#839b64]/40 text-[#3f241c] hover:bg-[#839b64] hover:text-[#eae5da] transition-colors cursor-pointer"
-                            title="Modifier cette enquête"
+                            title="Modifier cet article"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -533,7 +558,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               type="button"
                               onClick={() => setDeleteConfirmId(article.id)}
                               className="p-2 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
-                              title="Supprimer cette enquête"
+                              title="Supprimer cet article"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -543,6 +568,180 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: THEMATIC CATEGORIES MANAGEMENT */}
+          {activeTab === 'categories' && (
+            <div className="space-y-6">
+              {/* Header Ribbon */}
+              <div className="bg-[#f4f0e8] p-5 sm:p-6 rounded-2xl border border-[#3f241c]/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-[#839b64]" />
+                    <h3 className="font-extrabold text-base text-[#3f241c]">
+                      Gestion des Catégories Thématiques
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[#3f241c]/80 mt-1 max-w-2xl">
+                    Créez ou supprimez les rubriques éditoriales du média Six%. Les catégories actives sont immédiatement synchronisées sur les filtres de recherche, la barre de navigation et le formulaire de rédaction d'articles.
+                  </p>
+                </div>
+
+                {onResetCategories && (
+                  <button
+                    onClick={onResetCategories}
+                    className="px-3.5 py-2 rounded-xl border border-[#3f241c]/20 hover:bg-[#eae5da] text-xs font-bold text-[#3f241c] transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                    title="Restaurer les rubriques initiales"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-[#3f241c]/70" />
+                    <span>Rétablir les catégories d'origine</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Add Category Form Card */}
+              <div className="bg-[#f4f0e8] p-5 sm:p-6 rounded-2xl border border-[#3f241c]/15 shadow-xs">
+                <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold mb-3 flex items-center gap-2">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Ajouter une nouvelle catégorie thématique</span>
+                </h4>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newCatLabel.trim()) return;
+                    const finalVal = newCatValue.trim() || newCatLabel.trim();
+                    if (onAddCategory) {
+                      onAddCategory({ label: newCatLabel.trim(), value: finalVal });
+                      setNewCatLabel('');
+                      setNewCatValue('');
+                    }
+                  }}
+                  className="flex flex-col sm:flex-row gap-3 items-end"
+                >
+                  <div className="flex-1 w-full">
+                    <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
+                      Nom de la rubrique *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newCatLabel}
+                      onChange={(e) => {
+                        setNewCatLabel(e.target.value);
+                        if (!newCatValue || newCatValue === newCatLabel) {
+                          setNewCatValue(e.target.value);
+                        }
+                      }}
+                      placeholder="ex. Énergie & Climat, Droits Humains, Justice..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#eae5da] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="w-full sm:w-64">
+                    <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
+                      Clé de filtrage (optionnelle)
+                    </label>
+                    <input
+                      type="text"
+                      value={newCatValue}
+                      onChange={(e) => setNewCatValue(e.target.value)}
+                      placeholder="Généré automatiquement..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#eae5da] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-sm font-mono text-xs"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Créer la rubrique</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Categories Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {categoriesList.map((cat) => {
+                  const isAll = cat.value === 'Tous';
+                  const associatedArticles = isAll
+                    ? articles
+                    : articles.filter(
+                        (a) =>
+                          a.category.toLowerCase() === cat.value.toLowerCase() ||
+                          a.category.toLowerCase() === cat.label.toLowerCase()
+                      );
+
+                  return (
+                    <div
+                      key={cat.value}
+                      className="bg-[#f4f0e8] rounded-2xl border border-[#3f241c]/15 p-4 flex flex-col justify-between hover:border-[#839b64]/50 transition-all shadow-xs"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-xl bg-[#839b64]/20 border border-[#839b64]/30 flex items-center justify-center text-[#839b64] shrink-0 font-bold">
+                            <Tag className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-sm text-[#3f241c] truncate">
+                              {cat.label}
+                            </h4>
+                            <span className="text-[10px] font-mono text-[#3f241c]/60 truncate block">
+                              Valeur : {cat.value}
+                            </span>
+                          </div>
+                        </div>
+
+                        {isAll ? (
+                          <span className="px-2 py-0.5 rounded-md bg-[#3f241c]/10 text-[#3f241c]/60 text-[10px] font-mono font-bold shrink-0">
+                            Principale
+                          </span>
+                        ) : categoryDeleteConfirm === cat.value ? (
+                          <div className="flex items-center gap-1 bg-red-100 p-1 rounded-xl border border-red-300 animate-in fade-in shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onDeleteCategory) onDeleteCategory(cat.value);
+                                setCategoryDeleteConfirm(null);
+                              }}
+                              className="px-2 py-0.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 cursor-pointer"
+                            >
+                              Supprimer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCategoryDeleteConfirm(null)}
+                              className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded-lg text-xs cursor-pointer"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setCategoryDeleteConfirm(cat.value)}
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer shrink-0"
+                            title="Supprimer cette catégorie"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-[#3f241c]/10 flex items-center justify-between text-xs font-mono text-[#3f241c]/75">
+                        <span className="flex items-center gap-1">
+                          <BookOpen className="w-3.5 h-3.5 text-[#839b64]" />
+                          <span>{associatedArticles.length} article{associatedArticles.length > 1 ? 's' : ''}</span>
+                        </span>
+                        <span className="text-[10px] text-[#839b64] font-bold">
+                          {isAll ? 'Tous articles' : 'Rubrique active'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -560,7 +759,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </h3>
                   </div>
                   <p className="text-xs text-[#3f241c]/80 mt-1 max-w-2xl">
-                    Gérez chaque journaliste de la rédaction Six% : modifiez leur photo de profil (via la médiathèque ou vos fichiers), leur titre éditorial, leur biographie, leurs expertises et leurs canaux de contact chiffrés.
+                    Gérez chaque journaliste de la rédaction Six% : modifiez leur photo de profil (via la médiathèque ou vos fichiers), leur titre éditorial, leur biographie et leurs domaines d'expertise.
                   </p>
                 </div>
 
@@ -648,7 +847,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         {/* Specialties Tags */}
                         {journalist.specialties && journalist.specialties.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-4">
+                          <div className="flex flex-wrap gap-1 mb-2">
                             {journalist.specialties.map((spec) => (
                               <span
                                 key={spec}
@@ -659,35 +858,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ))}
                           </div>
                         )}
-
-                        {/* Secure transmission credentials */}
-                        <div className="space-y-1 py-2 border-t border-[#3f241c]/10 text-[11px] font-mono text-[#3f241c]/70">
-                          {journalist.email && (
-                            <div className="flex items-center gap-1.5 truncate" title={journalist.email}>
-                              <Mail className="w-3 h-3 text-[#839b64] shrink-0" />
-                              <span className="truncate">{journalist.email}</span>
-                            </div>
-                          )}
-                          {journalist.signalPhone && (
-                            <div className="flex items-center gap-1.5 truncate">
-                              <Phone className="w-3 h-3 text-[#839b64] shrink-0" />
-                              <span>Signal : {journalist.signalPhone}</span>
-                            </div>
-                          )}
-                          {journalist.pgpFingerprint && (
-                            <div className="flex items-center gap-1.5 truncate" title={journalist.pgpFingerprint}>
-                              <Lock className="w-3 h-3 text-[#839b64] shrink-0" />
-                              <span className="truncate">PGP : {journalist.pgpFingerprint.slice(0, 16)}...</span>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
                       {/* Card Footer: Articles Count & Actions */}
                       <div className="pt-3 border-t border-[#3f241c]/15 flex items-center justify-between gap-2 mt-2">
                         <span className="text-[11px] font-mono text-[#3f241c]/75 flex items-center gap-1">
                           <BookOpen className="w-3 h-3 text-[#839b64]" />
-                          <span>{authoredArticles.length} dossier{authoredArticles.length > 1 ? 's' : ''}</span>
+                          <span>{authoredArticles.length} article{authoredArticles.length > 1 ? 's' : ''}</span>
                         </span>
 
                         <div className="flex items-center gap-1.5">
@@ -926,7 +1103,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <p className="text-xs text-[#3f241c]/80 leading-relaxed">
-                  Toutes vos modifications (nouveaux articles, modifications d'enquêtes, photos de la médiathèque, journalistes et donateurs) sont enregistrées en temps réel dans votre base de données Google Firebase.
+                  Toutes vos modifications (nouveaux articles, photos de la médiathèque, journalistes, catégories et donateurs) sont enregistrées en temps réel dans votre base de données Google Firebase.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono">
@@ -954,7 +1131,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <p className="text-xs text-[#3f241c]/80 leading-relaxed">
-                  Téléchargez une copie JSON complète de l'ensemble des enquêtes de la rédaction Six% pour archivage ou transfert.
+                  Téléchargez une copie JSON complète de l'ensemble des articles de la rédaction Six% pour archivage ou transfert.
                 </p>
 
                 <button
@@ -962,7 +1139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#3f241c] hover:bg-[#2b1812] text-[#eae5da] text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Exporter les {articles.length} enquêtes (JSON)</span>
+                  <span>Exporter les {articles.length} articles (JSON)</span>
                 </button>
               </div>
 
@@ -975,19 +1152,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <p className="text-xs text-[#3f241c]/80 leading-relaxed">
-                  Si vous souhaitez restaurer l'état éditorial initial du média Six% (les 6 dossiers d'investigation majeurs créés par la cellule), cliquez sur le bouton ci-dessous.
+                  Si vous souhaitez restaurer l'état éditorial initial du média Six% (les 6 articles majeurs créés par la cellule), cliquez sur le bouton ci-dessous.
                 </p>
 
                 <button
                   onClick={() => {
-                    if (window.confirm('Voulez-vous vraiment réinitialiser toutes les enquêtes aux données d\'origine ?')) {
+                    if (window.confirm('Voulez-vous vraiment réinitialiser tous les articles aux données d\'origine ?')) {
                       onResetArticles();
                     }
                   }}
                   className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Rétablir les enquêtes initiales de Six%</span>
+                  <span>Rétablir les articles initiaux de Six%</span>
                 </button>
               </div>
             </div>
@@ -1001,6 +1178,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveArticle}
         articleToEdit={articleToEdit}
+        categories={categoriesList}
       />
 
       {/* Journalist Editor Modal (Create or Edit) */}

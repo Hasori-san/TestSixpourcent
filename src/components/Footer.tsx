@@ -8,6 +8,7 @@ interface FooterProps {
   onGoHome: () => void;
   onOpenAdmin: () => void;
   isAdminAuthenticated?: boolean;
+  categories?: { label: string; value: string }[];
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -15,6 +16,7 @@ export const Footer: React.FC<FooterProps> = ({
   onGoHome,
   onOpenAdmin,
   isAdminAuthenticated,
+  categories = CATEGORIES,
 }) => {
   return (
     <footer id="global-footer" className="bg-[#3f241c] text-[#eae5da] pt-14 pb-10 border-t-4 border-[#839b64]">
@@ -32,7 +34,7 @@ export const Footer: React.FC<FooterProps> = ({
             </div>
 
             <p className="text-sm text-[#eae5da]/80 leading-relaxed max-w-sm">
-              Six% est un média d'investigation indépendant dédié aux révélations d'intérêt public, à l'analyse de données déclassifiées et aux enquêtes au long cours.
+              Six% est un média d'investigation indépendant dédié aux révélations d'intérêt public, à l'analyse de données déclassifiées et aux articles au long cours.
             </p>
 
             <div className="flex items-center gap-4 text-xs font-mono text-[#839b64] pt-2">
@@ -48,10 +50,10 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Column 2: Categories */}
           <div className="md:col-span-4 space-y-3">
             <h4 className="text-xs font-mono uppercase tracking-widest text-[#839b64] font-bold">
-              Rayons d'investigation
+              Rubriques & Thématiques
             </h4>
             <ul className="space-y-2 text-sm text-[#eae5da]/80">
-              {CATEGORIES.filter(c => c.value !== 'Tous').map((cat) => (
+              {categories.filter(c => c.value !== 'Tous').map((cat) => (
                 <li key={cat.value}>
                   <button
                     onClick={() => onSelectCategory(cat.value)}
