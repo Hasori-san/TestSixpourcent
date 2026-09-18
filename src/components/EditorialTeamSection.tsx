@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, FileSearch, Mail, Phone, Lock, BookOpen, Camera } from 'lucide-react';
+import { Users, Camera } from 'lucide-react';
 import { Journalist } from '../types';
 import { ImageEditBadge } from './admin/ImageEditBadge';
 
@@ -34,7 +34,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#839b64]/15 border border-[#839b64]/30 text-[#3f241c] text-xs font-mono font-bold uppercase tracking-wider mb-3">
             <Users className="w-3.5 h-3.5 text-[#839b64]" />
-            La Rédaction • Six% Focus
+            La Rédaction • Six%
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#3f241c] tracking-tight">
             L'équipe de rédaction
@@ -63,22 +63,6 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
                 className="w-full h-[320px] sm:h-[420px] lg:h-[460px] object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-
-              {/* Photo Overlay Tag */}
-              <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#3f241c]/85 text-[#eae5da] text-[11px] font-mono backdrop-blur-xs border border-[#eae5da]/20 shadow-xs">
-                <FileSearch className="w-3.5 h-3.5 text-[#839b64]" />
-                <span>Conférence de rédaction • Dossiers en cours</span>
-              </div>
-
-              {/* Bottom Quote Bar */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#3f241c] via-[#3f241c]/90 to-transparent p-5 text-[#eae5da]">
-                <p className="text-xs sm:text-sm italic font-serif leading-snug text-[#eae5da]/90">
-                  « Chaque fait est étayé par des preuves matérielles, des pièces déclassifiées et des expertises indépendantes. »
-                </p>
-                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#839b64] mt-1 font-bold">
-                  Charte déontologique de Munich appliquée
-                </span>
-              </div>
             </div>
 
             <div className="flex items-center justify-between text-xs text-[#3f241c]/65 font-mono px-1">
@@ -179,7 +163,7 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
                     )}
 
                     {j.specialties && j.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
+                      <div className="flex flex-wrap gap-1">
                         {j.specialties.slice(0, 3).map((spec) => (
                           <span
                             key={spec}
@@ -189,28 +173,6 @@ export const EditorialTeamSection: React.FC<EditorialTeamSectionProps> = ({
                           </span>
                         ))}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="pt-2.5 border-t border-[#3f241c]/10 flex items-center justify-between text-[11px] font-mono text-[#3f241c]/70">
-                    {j.email ? (
-                      <a
-                        href={`mailto:${j.email}`}
-                        className="hover:text-[#839b64] flex items-center gap-1 transition-colors"
-                        title={j.email}
-                      >
-                        <Mail className="w-3 h-3 text-[#839b64]" />
-                        <span className="truncate max-w-[140px]">{j.email}</span>
-                      </a>
-                    ) : (
-                      <span className="text-[10px] text-[#3f241c]/40">Contact via rédaction</span>
-                    )}
-
-                    {j.signalPhone && (
-                      <span className="text-[10px] text-[#839b64] font-bold flex items-center gap-1">
-                        <Phone className="w-2.5 h-2.5" />
-                        <span>Signal vérifié</span>
-                      </span>
                     )}
                   </div>
                 </div>

@@ -258,9 +258,11 @@ export default function App() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const separatorEl = document.getElementById('section-separator-database');
-      const popularEl = document.getElementById('carousel-3d-section');
+      const redactionEl = document.getElementById('section-equipe-redaction');
 
-      if (separatorEl && scrollY >= separatorEl.offsetTop - 140) {
+      if (redactionEl && scrollY >= redactionEl.offsetTop - 180) {
+        setActiveNavTab('redaction');
+      } else if (separatorEl && scrollY >= separatorEl.offsetTop - 140) {
         setActiveNavTab('recherche');
       } else {
         setActiveNavTab('populaires');
@@ -282,6 +284,19 @@ export default function App() {
         const section = document.getElementById('carousel-3d-section');
         if (section) {
           section.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 50);
+    } else if (tab === 'redaction') {
+      if (selectedArticle) {
+        setSelectedArticle(null);
+        window.history.pushState(null, '', window.location.pathname);
+      }
+      setTimeout(() => {
+        const section = document.getElementById('section-equipe-redaction');
+        if (section) {
+          const navbarHeight = 85;
+          const targetY = section.getBoundingClientRect().top + window.scrollY - navbarHeight;
+          window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
         }
       }, 50);
     } else if (tab === 'recherche') {
@@ -790,13 +805,11 @@ export default function App() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-[#3f241c]">
-                      {showFeatured
-                        ? "Autres dossiers d'investigation"
-                        : searchQuery
+                      {searchQuery
                         ? 'Résultats de recherche'
-                        : selectedCategory === 'Tous'
-                        ? 'Toutes les enquêtes'
-                        : `Dossiers ${selectedCategory}`}
+                        : selectedCategory !== 'Tous'
+                        ? `Dossiers ${selectedCategory}`
+                        : 'Tous les articles'}
                     </h3>
                     <span className="text-xs font-mono text-[#3f241c]/60">
                       {gridArticles.length} {gridArticles.length > 1 ? 'publications disponibles' : 'publication disponible'}

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Bookmark, Search, Flame, FileText } from 'lucide-react';
+import { Bookmark, Search, Flame, FileText, Users } from 'lucide-react';
 import { Navbar1, NavItem } from '@/components/ui/navbar-1';
 
-export type NavTabId = 'toutes' | 'populaires' | 'recherche' | 'favoris' | 'lecture';
+export type NavTabId = 'toutes' | 'populaires' | 'redaction' | 'recherche' | 'favoris' | 'lecture';
 
 interface NavbarProps {
   currentTab: NavTabId;
@@ -28,6 +28,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       id: 'populaires',
       label: 'Dossiers populaires',
       icon: <Flame className="w-4 h-4 text-current" />,
+    },
+    {
+      id: 'redaction',
+      label: 'La rédaction',
+      icon: <Users className="w-4 h-4 text-current" />,
     },
     {
       id: 'recherche',

@@ -65,7 +65,7 @@ export const DonorsMarquee: React.FC<DonorsMarqueeProps> = ({ donors = DEFAULT_D
         </h2>
 
         <p className="mt-2 text-sm sm:text-base text-[#3f241c]/80 max-w-2xl mx-auto">
-          Sans actionnaire, sans publicité et sans subvention d'intérêt : chacune de nos enquêtes est rendue possible grâce au soutien de nos <span className="font-bold text-[#839b64]">1 428 donateurs et donatrices</span>.
+          Sans actionnaire, sans publicité et sans subvention d'intérêt : l'existence de notre média est rendue possible grâce au soutien de nos <span className="font-bold text-[#839b64]">1 428 donateurs et donatrices</span>.
         </p>
       </div>
 
