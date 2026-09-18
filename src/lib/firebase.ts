@@ -316,6 +316,8 @@ export async function resetAllCloudData(
 
 export interface SiteSettings {
   editorialTeamPhoto?: string;
+  editorialPhoto?: string;
+  totalDonorsCount?: number;
 }
 
 export function subscribeSiteSettings(

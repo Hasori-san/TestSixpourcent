@@ -4,10 +4,25 @@ import { Donor, DEFAULT_DONORS } from '../data/donors';
 
 interface DonorsMarqueeProps {
   donors?: Donor[];
+  totalDonorsCount?: number;
 }
 
-export const DonorsMarquee: React.FC<DonorsMarqueeProps> = ({ donors = DEFAULT_DONORS }) => {
+export const DonorsMarquee: React.FC<DonorsMarqueeProps> = ({
+  donors = DEFAULT_DONORS,
+  totalDonorsCount,
+}) => {
   const [supportMessageOpen, setSupportMessageOpen] = useState(false);
+
+  const countToDisplay =
+    totalDonorsCount !== undefined
+      ? totalDonorsCount
+      : donors.length > 0
+      ? donors.length
+      : 1428;
+
+  const formattedCount = new Intl.NumberFormat('fr-FR').format(countToDisplay);
+  const donorsLabel =
+    countToDisplay === 1 ? 'donateur ou donatrice' : 'donateurs et donatrices';
 
   const { row1, row2 } = useMemo(() => {
     const list = donors.length > 0 ? donors : DEFAULT_DONORS;
@@ -65,7 +80,7 @@ export const DonorsMarquee: React.FC<DonorsMarqueeProps> = ({ donors = DEFAULT_D
         </h2>
 
         <p className="mt-2 text-sm sm:text-base text-[#3f241c]/80 max-w-2xl mx-auto">
-          Sans actionnaire, sans publicité et sans subvention d'intérêt : l'existence de notre média est rendue possible grâce au soutien de nos <span className="font-bold text-[#839b64]">1 428 donateurs et donatrices</span>.
+          Sans actionnaire, sans publicité et sans subvention d'intérêt : l'existence de notre média est rendue possible grâce au soutien de nos <span className="font-bold text-[#839b64]">{formattedCount} {donorsLabel}</span>.
         </p>
       </div>
 

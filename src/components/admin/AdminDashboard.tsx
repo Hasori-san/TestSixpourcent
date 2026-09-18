@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Shield,
   Plus,
@@ -58,6 +58,8 @@ interface AdminDashboardProps {
   onAddCategory?: (category: { label: string; value: string }) => void;
   onDeleteCategory?: (categoryValue: string) => void;
   onResetCategories?: () => void;
+  totalDonorsCount?: number;
+  onUpdateTotalDonorsCount?: (count: number) => void;
 }
 
 type AdminTab = 'articles' | 'categories' | 'journalistes' | 'donateurs' | 'media' | 'maintenance';
@@ -87,6 +89,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddCategory,
   onDeleteCategory,
   onResetCategories,
+  totalDonorsCount = 1428,
+  onUpdateTotalDonorsCount,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('articles');
   const [searchFilter, setSearchFilter] = useState('');
@@ -124,6 +128,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [donorLocation, setDonorLocation] = useState('');
   const [donorNote, setDonorNote] = useState('Donateur');
   const [donorSuccessMsg, setDonorSuccessMsg] = useState(false);
+
+  // Annotated donor count state (synced with homepage public text)
+  const [annotatedCountInput, setAnnotatedCountInput] = useState<string>(() =>
+    totalDonorsCount !== undefined ? String(totalDonorsCount) : '1428'
+  );
+  const [annotatedCountSaved, setAnnotatedCountSaved] = useState(false);
+
+  useEffect(() => {
+    if (totalDonorsCount !== undefined) {
+      setAnnotatedCountInput(String(totalDonorsCount));
+    }
+  }, [totalDonorsCount]);
+
+  const handleSaveAnnotatedCount = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseInt(annotatedCountInput, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      if (onUpdateTotalDonorsCount) {
+        onUpdateTotalDonorsCount(parsed);
+      }
+      setAnnotatedCountSaved(true);
+      setTimeout(() => setAnnotatedCountSaved(false), 3000);
+    }
+  };
+
+  const handleUseListCount = () => {
+    const listLen = donors.length;
+    setAnnotatedCountInput(String(listLen));
+    if (onUpdateTotalDonorsCount) {
+      onUpdateTotalDonorsCount(listLen);
+    }
+    setAnnotatedCountSaved(true);
+    setTimeout(() => setAnnotatedCountSaved(false), 3000);
+  };
 
   // Filtered articles
   const filteredArticles = useMemo(() => {
@@ -334,7 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <Heart className="w-4 h-4 text-[#839b64]" />
-            <span>Donateurs ({donors.length})</span>
+            <span>Donateurs ({new Intl.NumberFormat('fr-FR').format(totalDonorsCount !== undefined ? totalDonorsCount : donors.length)})</span>
           </button>
 
           <button
@@ -936,6 +974,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB 3: DONORS & MARQUEE MANAGEMENT */}
           {activeTab === 'donateurs' && (
             <div className="space-y-6">
+              {/* SECTION: NOMBRE RÉEL DE DONATEURS ANNOTÉ PAR L'ADMIN */}
+              <div className="bg-[#f4f0e8] p-5 sm:p-6 rounded-2xl border border-[#3f241c]/15 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#3f241c]/15">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#839b64]/20 border border-[#839b64]/30 flex items-center justify-center text-[#839b64] shrink-0">
+                      <Heart className="w-5 h-5 fill-current" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-base text-[#3f241c]">
+                          Nombre réel de donateurs annoté
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-md bg-[#839b64]/15 text-[#839b64] font-mono font-bold text-[10px] uppercase">
+                          Affiché en direct sur le site
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#3f241c]/70 mt-1 leading-relaxed">
+                        Ce nombre est directement injecté dans le texte de la page d'accueil : <em>« grâce au soutien de nos <strong className="text-[#839b64]">{new Intl.NumberFormat('fr-FR').format(parseInt(annotatedCountInput, 10) || totalDonorsCount || donors.length)} donateurs et donatrices</strong> »</em>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveAnnotatedCount} className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="flex-1 w-full sm:max-w-xs">
+                    <label className="block text-[11px] font-mono font-bold uppercase text-[#3f241c]/80 mb-1">
+                      Nombre de donateurs à afficher
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={annotatedCountInput}
+                      onChange={(e) => setAnnotatedCountInput(e.target.value)}
+                      placeholder="ex. 1428"
+                      required
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#eae5da] border border-[#3f241c]/25 focus:border-[#839b64] outline-none font-bold text-[#3f241c] text-sm"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-0 sm:pt-5 w-full sm:w-auto">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-[#839b64] hover:bg-[#728956] text-[#eae5da] text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Enregistrer ce nombre</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleUseListCount}
+                      className="px-3.5 py-2 rounded-xl bg-[#eae5da] hover:bg-[#ded8cc] border border-[#3f241c]/20 text-xs font-bold text-[#3f241c] transition-colors cursor-pointer"
+                      title="Utiliser le nombre exact de profils enregistrés dans la liste"
+                    >
+                      <span>Synchroniser avec la liste ({donors.length})</span>
+                    </button>
+                  </div>
+                </form>
+
+                {annotatedCountSaved && (
+                  <div className="mt-3 p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Le nombre de donateurs a été mis à jour et synchronisé avec le texte public du site !</span>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form to Add Donor */}
                 <div className="lg:col-span-1 bg-[#f4f0e8] p-6 rounded-2xl border border-[#3f241c]/15 space-y-4">

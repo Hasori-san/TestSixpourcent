@@ -45,6 +45,7 @@ const STORAGE_KEY_ARTICLES = 'six_pourcent_articles_db';
 const STORAGE_KEY_CATEGORIES = 'six_pourcent_categories_db';
 const STORAGE_KEY_DONORS = 'six_pourcent_donors_db';
 const STORAGE_KEY_JOURNALISTS = 'six_pourcent_journalists_db';
+const STORAGE_KEY_TOTAL_DONORS_COUNT = 'six_pourcent_total_donors_count';
 
 export default function App() {
   // Articles state initialized from local cache or default editorial data
@@ -89,6 +90,19 @@ export default function App() {
       console.error('Failed to load custom donors', e);
     }
     return DEFAULT_DONORS;
+  });
+
+  // Annotated total donors count (configured by admin in donors space)
+  const [totalDonorsCount, setTotalDonorsCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_TOTAL_DONORS_COUNT);
+      if (saved !== null && !isNaN(Number(saved))) {
+        return Number(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load total donors count', e);
+    }
+    return 1428;
   });
 
   // Journalists state
@@ -205,6 +219,15 @@ export default function App() {
     }
   }, [donors]);
 
+  // Sync annotated total donors count to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_TOTAL_DONORS_COUNT, totalDonorsCount.toString());
+    } catch (e) {
+      console.error('Failed to persist total donors count', e);
+    }
+  }, [totalDonorsCount]);
+
   // Sync custom journalists to localStorage
   useEffect(() => {
     try {
@@ -240,6 +263,9 @@ export default function App() {
           ...prev,
           ...cloudSettings,
         }));
+        if (typeof cloudSettings.totalDonorsCount === 'number') {
+          setTotalDonorsCount(cloudSettings.totalDonorsCount);
+        }
       }
     });
 
@@ -519,6 +545,13 @@ export default function App() {
     setDonors(DEFAULT_DONORS);
     DEFAULT_DONORS.forEach((d) =>
       saveDonorToCloud(d).catch(() => {})
+    );
+  };
+
+  const handleUpdateTotalDonorsCount = (count: number) => {
+    setTotalDonorsCount(count);
+    saveSiteSettings({ totalDonorsCount: count }).catch((err) =>
+      console.warn('[Firebase Cloud] Erreur mise à jour nombre de donateurs:', err)
     );
   };
 
@@ -923,7 +956,7 @@ export default function App() {
           />
 
           {/* Bandeau défilant des donateurs et donatrices */}
-          <DonorsMarquee donors={donors} />
+          <DonorsMarquee donors={donors} totalDonorsCount={totalDonorsCount} />
         </main>
       )}
 
@@ -1014,6 +1047,8 @@ export default function App() {
         onAddCategory={handleAddCategory}
         onDeleteCategory={handleDeleteCategory}
         onResetCategories={handleResetCategories}
+        totalDonorsCount={totalDonorsCount}
+        onUpdateTotalDonorsCount={handleUpdateTotalDonorsCount}
       />
     </div>
   );
