@@ -268,7 +268,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const popularCount = articles.filter((a) => a.isPopular).length;
-  const featuredCount = articles.filter((a) => a.isFeatured).length;
 
   return (
     <div
@@ -431,10 +430,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <span className="flex items-center gap-1 bg-[#f4f0e8] px-2.5 py-1 rounded-md border border-[#3f241c]/15">
             <Flame className="w-3.5 h-3.5 text-[#839b64]" />
             <span>{popularCount} Populaires (3D)</span>
-          </span>
-          <span className="flex items-center gap-1 bg-[#f4f0e8] px-2.5 py-1 rounded-md border border-[#3f241c]/15">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>{featuredCount} À la une</span>
           </span>
         </div>
       </div>
