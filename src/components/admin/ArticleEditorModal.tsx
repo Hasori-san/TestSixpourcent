@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Check, Sparkles, Image as ImageIcon, FileText, User, Tag, FolderOpen } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Plus, Trash2, Check, Sparkles, Image as ImageIcon, FileText, User, Tag, FolderOpen, ExternalLink, Bold, Italic, Underline, Heading2, Quote, List } from 'lucide-react';
 import { Article, Category } from '../../types';
 import { CATEGORIES } from '../../data/articles';
 import { MediaLibrary } from './MediaLibrary';
@@ -10,6 +10,7 @@ interface ArticleEditorModalProps {
   onSave: (article: Article) => void;
   articleToEdit?: Article | null;
   categories?: { label: string; value: string }[];
+  onOpenGoogleDocsMode?: () => void;
 }
 
 const DEFAULT_AVATARS = [
@@ -33,6 +34,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   onSave,
   articleToEdit,
   categories = CATEGORIES,
+  onOpenGoogleDocsMode,
 }) => {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -56,6 +58,23 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   ]);
   const [newRevelation, setNewRevelation] = useState('');
   const [mainContent, setMainContent] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Quick insertion helpers for textarea
+  const insertTextFormatting = (prefix: string, suffix: string = '') => {
+    if (!textareaRef.current) return;
+    const el = textareaRef.current;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = el.value.substring(start, end) || 'texte';
+    const replacement = `${prefix}${selected}${suffix}`;
+    const newVal = el.value.substring(0, start) + replacement + el.value.substring(end);
+    setMainContent(newVal);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+    }, 10);
+  };
 
   // Media picker modal state
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
@@ -190,6 +209,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       ],
       sourcesCount: Math.round(Number(leakedDocumentsCount) * 0.75) + 3,
       verifiedFactChecks: Math.round(Number(leakedDocumentsCount) * 1.5) + 8,
+      contentHtml: articleToEdit?.contentHtml,
     };
 
     onSave(newArticle);
@@ -226,6 +246,26 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Google Docs Mode Banner */}
+        {onOpenGoogleDocsMode && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shrink-0">
+            <div className="flex items-center gap-2 text-blue-950 font-medium">
+              <span className="text-lg">📄</span>
+              <span>
+                <strong>Éditeur enrichi disponible :</strong> Rédigez avec mise en forme directe (Gras, Souligné, Tailles, Alignement, etc.).
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenGoogleDocsMode}
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Ouvrir dans l'éditeur</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Scrollable Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
@@ -587,16 +627,97 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
 
           {/* Section: Contenu */}
           <div className="space-y-2">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold border-b border-[#3f241c]/15 pb-1">
-              6. Corps de l'article (Markdown / Paragraphes)
-            </h4>
+            <div className="flex items-center justify-between border-b border-[#3f241c]/15 pb-1">
+              <h4 className="text-xs font-mono uppercase tracking-wider text-[#839b64] font-bold">
+                6. Corps de l'article (Markdown / Paragraphes)
+              </h4>
+              {onOpenGoogleDocsMode && (
+                <button
+                  type="button"
+                  onClick={onOpenGoogleDocsMode}
+                  className="text-xs text-blue-700 hover:text-blue-900 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Basculer vers l'éditeur plein écran →</span>
+                </button>
+              )}
+            </div>
+
+            {/* Quick formatting toolbar */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-[#ded8cc] rounded-xl border border-[#3f241c]/15 text-xs">
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('**', '**')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] font-bold flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Mettre en gras (**texte**)"
+              >
+                <Bold className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Gras</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('<u>', '</u>')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] underline flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Souligner (<u>texte</u>)"
+              >
+                <Underline className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Souligné</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('*', '*')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] italic flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Mettre en italique (*texte*)"
+              >
+                <Italic className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Italique</span>
+              </button>
+              <span className="w-px h-4 bg-[#3f241c]/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('\n\n## ', '\n\n')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] font-bold flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Grand titre de section"
+              >
+                <Heading2 className="w-3.5 h-3.5" />
+                <span>Titre H2</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('\n\n> ', '\n\n')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Citation / Exergue"
+              >
+                <Quote className="w-3.5 h-3.5" />
+                <span>Citation</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('\n- ', '\n- ')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] flex items-center gap-1 cursor-pointer border border-[#3f241c]/15"
+                title="Liste à puces"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Puces</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTextFormatting('\n\n---\n\n')}
+                className="px-2 py-1 rounded bg-[#eae5da] hover:bg-white text-[#3f241c] font-mono text-[11px] cursor-pointer border border-[#3f241c]/15"
+                title="Nouvelle section"
+              >
+                --- Section
+              </button>
+            </div>
+
             <p className="text-[11px] text-[#3f241c]/70">
-              Utilisez <code>## Titre de section</code> pour les sous-titres, et séparez les sections par <code>---</code> si souhaité.
+              Tapez votre texte ou utilisez les boutons ci-dessus. Pour un confort total comme sur un traitement de texte, ouvrez l'<strong>Éditeur</strong>.
             </p>
             <textarea
+              ref={textareaRef}
               value={mainContent}
               onChange={(e) => setMainContent(e.target.value)}
-              rows={6}
+              rows={7}
               className="w-full px-3.5 py-2.5 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-xs font-mono leading-relaxed"
             />
           </div>

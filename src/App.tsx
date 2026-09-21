@@ -788,8 +788,8 @@ export default function App() {
                   <span className="w-2.5 h-2.5 rounded-full bg-[#839b64]"></span>
                   Média d'investigation en accès libre & indépendant
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#3f241c] tracking-tight leading-[1.08]">
-                  Ce que le pouvoir préférerait garder sous silence.
+                <h1 id="hero-main-title" className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#3f241c] tracking-tight leading-[1.08]">
+                  Certains l’achètent, d’autres le font disparaître : l’art a ses secrets que le pays ignore…
                 </h1>
                 <p className="mt-4 text-base sm:text-lg text-[#3f241c]/80 leading-relaxed max-w-2xl font-normal">
                   Chaque semaine, notre cellule de journalistes et data-analystes décortique contrats confidentiels, données satellitaires et mémos déclassifiés. Lisez en un clic chaque dossier vérifié.

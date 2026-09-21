@@ -25,11 +25,13 @@ import {
   Users,
   Tag,
   Database,
+  FileText,
 } from 'lucide-react';
 import { Article, Category, Journalist } from '../../types';
 import { CATEGORIES } from '../../data/articles';
 import { Donor } from '../../data/donors';
 import { ArticleEditorModal } from './ArticleEditorModal';
+import { GoogleDocsArticleEditor } from './GoogleDocsArticleEditor';
 import { MediaLibrary } from './MediaLibrary';
 import { JournalistEditorModal } from './JournalistEditorModal';
 
@@ -97,6 +99,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('Tous');
   const [articleToEdit, setArticleToEdit] = useState<Article | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isGoogleDocsOpen, setIsGoogleDocsOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Category management state
@@ -185,13 +188,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsEditorOpen(true);
   };
 
+  const handleOpenGoogleDocsNew = () => {
+    setArticleToEdit(null);
+    setIsGoogleDocsOpen(true);
+  };
+
   const handleOpenEditArticle = (article: Article) => {
     setArticleToEdit(article);
     setIsEditorOpen(true);
   };
 
+  const handleOpenGoogleDocsEdit = (article: Article) => {
+    setArticleToEdit(article);
+    setIsGoogleDocsOpen(true);
+  };
+
   const handleSaveArticle = (saved: Article) => {
-    if (articleToEdit) {
+    const exists = articles.some((a) => a.id === saved.id);
+    if (articleToEdit || exists) {
       onUpdateArticle(saved);
     } else {
       onAddArticle(saved);
@@ -290,6 +304,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            id="admin-new-editor-article-btn"
+            onClick={handleOpenGoogleDocsNew}
+            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer border border-blue-500"
+            title="Rédiger dans l'éditeur de texte enrichi (Gras, Souligné, Tailles, Alignement...)"
+          >
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Éditeur</span>
+            <span className="sm:hidden">Éditeur</span>
+          </button>
+
           <button
             id="admin-new-article-btn"
             onClick={handleOpenNewArticle}
@@ -464,7 +489,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Articles enregistrés ({filteredArticles.length})
                   </h3>
                   <span className="text-xs font-mono text-[#3f241c]/60">
-                    Cliquez sur les étoiles pour basculer la une ou le carrousel 3D
+                    Cliquez sur Carrousel 3D pour basculer l'affichage dans la bannière 3D
                   </span>
                 </div>
 
@@ -531,21 +556,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <span>Carrousel 3D</span>
                           </button>
 
-                          {/* Featured Toggle */}
-                          <button
-                            type="button"
-                            onClick={() => onToggleFeatured(article.id)}
-                            className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                              article.isFeatured
-                                ? 'bg-[#3f241c] text-[#eae5da] border-[#3f241c]'
-                                : 'bg-[#eae5da] text-[#3f241c]/60 border-[#3f241c]/20 hover:border-[#3f241c]'
-                            }`}
-                            title="Activer/désactiver à la une"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>À la une</span>
-                          </button>
-
                           {/* Preview in Reader */}
                           <button
                             type="button"
@@ -559,12 +569,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <ExternalLink className="w-4 h-4" />
                           </button>
 
+                          {/* Edit Article in Editor Mode */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenGoogleDocsEdit(article)}
+                            className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+                            title="Ouvrir dans l'éditeur (Gras, Souligné, Tailles, Alignement...)"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+
                           {/* Edit Article */}
                           <button
                             type="button"
                             onClick={() => handleOpenEditArticle(article)}
                             className="p-2 rounded-xl bg-[#839b64]/20 border border-[#839b64]/40 text-[#3f241c] hover:bg-[#839b64] hover:text-[#eae5da] transition-colors cursor-pointer"
-                            title="Modifier cet article"
+                            title="Modifier les options et métadonnées de l'article"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -1284,7 +1304,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onSave={handleSaveArticle}
         articleToEdit={articleToEdit}
         categories={categoriesList}
+        onOpenGoogleDocsMode={() => {
+          setIsEditorOpen(false);
+          setIsGoogleDocsOpen(true);
+        }}
       />
+
+      {/* Google Docs Article Editor Fullscreen */}
+      {isGoogleDocsOpen && (
+        <GoogleDocsArticleEditor
+          isOpen={isGoogleDocsOpen}
+          onClose={() => {
+            setIsGoogleDocsOpen(false);
+            setArticleToEdit(null);
+          }}
+          onSave={(saved) => {
+            handleSaveArticle(saved);
+            setIsGoogleDocsOpen(false);
+            setArticleToEdit(null);
+          }}
+          articleToEdit={articleToEdit}
+          categories={categoriesList}
+        />
+      )}
 
       {/* Journalist Editor Modal (Create or Edit) */}
       <JournalistEditorModal

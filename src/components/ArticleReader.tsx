@@ -296,21 +296,29 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
           </p>
         </div>
 
-        {/* Article Body Sections */}
-        <div className={`space-y-8 font-sans ${getBodySizeClass()}`}>
-          {article.sections.map((section, idx) => (
-            <section key={idx} className="space-y-5">
-              {section.title && (
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#3f241c] tracking-tight mt-10 mb-4 border-b border-[#3f241c]/15 pb-2">
-                  {section.title}
-                </h2>
-              )}
+        {/* Article Body Sections / Rich Content */}
+        {article.contentHtml ? (
+          <div
+            className={`article-rich-content space-y-6 font-sans leading-relaxed text-[#3f241c]/90 text-justify ${getBodySizeClass()}`}
+            dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+          />
+        ) : (
+          <div className={`space-y-8 font-sans ${getBodySizeClass()}`}>
+            {article.sections.map((section, idx) => (
+              <section key={idx} className="space-y-5">
+                {section.title && (
+                  <h2 className="text-2xl sm:text-3xl font-bold text-[#3f241c] tracking-tight mt-10 mb-4 border-b border-[#3f241c]/15 pb-2">
+                    {section.title}
+                  </h2>
+                )}
 
-              {section.paragraphs.map((p, pIdx) => (
-                <p key={pIdx} className="text-[#3f241c]/90 leading-relaxed text-justify">
-                  {p}
-                </p>
-              ))}
+                {section.paragraphs.map((p, pIdx) => (
+                  <p
+                    key={pIdx}
+                    className="text-[#3f241c]/90 leading-relaxed text-justify"
+                    dangerouslySetInnerHTML={{ __html: p }}
+                  />
+                ))}
 
               {/* Styled Pull Quote */}
               {section.quote && (
@@ -339,6 +347,7 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
             </section>
           ))}
         </div>
+      )}
 
         {/* Related Articles Section with 1-Click Read */}
         <section className="mt-16 pt-10 border-t-2 border-[#3f241c]/15">

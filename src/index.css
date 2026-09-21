@@ -86,3 +86,127 @@
 .animate-marquee-reverse:hover {
   animation-play-state: paused;
 }
+
+/* Rich Text & Google Docs Article Styling */
+.article-rich-content,
+.docs-editor-content {
+  color: #3f241c;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.article-rich-content b,
+.article-rich-content strong,
+.docs-editor-content b,
+.docs-editor-content strong {
+  font-weight: 700;
+  color: #2b1812;
+}
+
+.article-rich-content u,
+.docs-editor-content u {
+  text-decoration: underline;
+  text-decoration-color: #839b64;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.article-rich-content i,
+.article-rich-content em,
+.docs-editor-content i,
+.docs-editor-content em {
+  font-style: italic;
+}
+
+.article-rich-content s,
+.article-rich-content strike,
+.docs-editor-content s,
+.docs-editor-content strike {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.article-rich-content h1,
+.docs-editor-content h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #3f241c;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.article-rich-content h2,
+.docs-editor-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3f241c;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(63, 36, 28, 0.15);
+  line-height: 1.25;
+}
+
+.article-rich-content h3,
+.docs-editor-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3f241c;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.article-rich-content ul,
+.docs-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.article-rich-content ol,
+.docs-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.article-rich-content li,
+.docs-editor-content li {
+  margin-bottom: 0.35rem;
+}
+
+.article-rich-content blockquote,
+.docs-editor-content blockquote {
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  background-color: rgba(222, 216, 204, 0.5);
+  border-left: 4px solid #839b64;
+  border-radius: 0.75rem;
+  font-style: italic;
+  font-size: 1.125rem;
+  color: #3f241c;
+}
+
+.article-rich-content mark,
+.docs-editor-content mark {
+  background-color: rgba(131, 155, 100, 0.25);
+  color: #3f241c;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.article-rich-content hr,
+.docs-editor-content hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 2px solid rgba(63, 36, 28, 0.15);
+}
+
+.article-rich-content p,
+.docs-editor-content p {
+  margin-bottom: 1rem;
+}

@@ -52,6 +52,7 @@ export interface Article {
   audioDuration: string;
   keyRevelations: string[];
   sections: ArticleSection[];
+  contentHtml?: string;
   documentEvidence?: LeakedDocument;
   sourcesCount: number;
   verifiedFactChecks: number;
