@@ -39,8 +39,11 @@ async function testConnection() {
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('[Six Pourcent Firebase] Connecté à Firestore avec succès');
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('the client is offline') || msg.includes('offline')) {
       console.warn('[Six Pourcent Firebase] Client hors-ligne, utilisation du cache local');
+    } else if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Six Pourcent Firebase] Quota Firestore atteint : le cache local haute fidélité prend le relais de manière transparente.');
     }
   }
 }
@@ -85,7 +88,12 @@ export function subscribeArticles(
       }
     },
     (err) => {
-      console.warn('[Firebase] Erreur d\'écoute des articles Firestore:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+        console.info('[Firebase] Quota Firestore atteint, maintien des articles via le stockage local.');
+      } else {
+        console.warn('[Firebase] Erreur d\'écoute des articles Firestore:', err);
+      }
       onUpdate(initialFallback);
     }
   );
@@ -94,16 +102,34 @@ export function subscribeArticles(
 }
 
 export async function saveArticleToCloud(article: Article): Promise<void> {
-  const ref = doc(db, 'articles', article.id);
-  await setDoc(ref, {
-    ...article,
-    updatedAt: new Date().toISOString(),
-  });
+  try {
+    const ref = doc(db, 'articles', article.id);
+    await setDoc(ref, {
+      ...article,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, sauvegarde cloud différée (conservé en local)');
+    } else {
+      console.warn('[Firebase] Erreur sauvegarde article cloud:', err);
+    }
+  }
 }
 
 export async function deleteArticleFromCloud(articleId: string): Promise<void> {
-  const ref = doc(db, 'articles', articleId);
-  await deleteDoc(ref);
+  try {
+    const ref = doc(db, 'articles', articleId);
+    await deleteDoc(ref);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, suppression cloud différée');
+    } else {
+      console.warn('[Firebase] Erreur suppression article cloud:', err);
+    }
+  }
 }
 
 /* =========================================================================
@@ -143,7 +169,12 @@ export function subscribeJournalists(
       }
     },
     (err) => {
-      console.warn('[Firebase] Erreur d\'écoute des journalistes Firestore:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+        console.info('[Firebase] Quota Firestore atteint, maintien des journalistes via le stockage local.');
+      } else {
+        console.warn('[Firebase] Erreur d\'écoute des journalistes Firestore:', err);
+      }
       onUpdate(initialFallback);
     }
   );
@@ -152,13 +183,31 @@ export function subscribeJournalists(
 }
 
 export async function saveJournalistToCloud(journalist: Journalist): Promise<void> {
-  const ref = doc(db, 'journalists', journalist.id);
-  await setDoc(ref, journalist);
+  try {
+    const ref = doc(db, 'journalists', journalist.id);
+    await setDoc(ref, journalist);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, sauvegarde journaliste conservée en local');
+    } else {
+      console.warn('[Firebase] Erreur sauvegarde journaliste cloud:', err);
+    }
+  }
 }
 
 export async function deleteJournalistFromCloud(journalistId: string): Promise<void> {
-  const ref = doc(db, 'journalists', journalistId);
-  await deleteDoc(ref);
+  try {
+    const ref = doc(db, 'journalists', journalistId);
+    await deleteDoc(ref);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, suppression journaliste différée');
+    } else {
+      console.warn('[Firebase] Erreur suppression journaliste cloud:', err);
+    }
+  }
 }
 
 /* =========================================================================
@@ -198,7 +247,12 @@ export function subscribeDonors(
       }
     },
     (err) => {
-      console.warn('[Firebase] Erreur d\'écoute des donateurs Firestore:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+        console.info('[Firebase] Quota Firestore atteint, maintien des donateurs via le stockage local.');
+      } else {
+        console.warn('[Firebase] Erreur d\'écoute des donateurs Firestore:', err);
+      }
       onUpdate(initialFallback);
     }
   );
@@ -207,13 +261,31 @@ export function subscribeDonors(
 }
 
 export async function saveDonorToCloud(donor: Donor): Promise<void> {
-  const ref = doc(db, 'donors', donor.id);
-  await setDoc(ref, donor);
+  try {
+    const ref = doc(db, 'donors', donor.id);
+    await setDoc(ref, donor);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, donateur conservé en local');
+    } else {
+      console.warn('[Firebase] Erreur sauvegarde donateur cloud:', err);
+    }
+  }
 }
 
 export async function deleteDonorFromCloud(donorId: string): Promise<void> {
-  const ref = doc(db, 'donors', donorId);
-  await deleteDoc(ref);
+  try {
+    const ref = doc(db, 'donors', donorId);
+    await deleteDoc(ref);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+      console.info('[Firebase] Quota atteint, suppression donateur différée');
+    } else {
+      console.warn('[Firebase] Erreur suppression donateur cloud:', err);
+    }
+  }
 }
 
 /* =========================================================================

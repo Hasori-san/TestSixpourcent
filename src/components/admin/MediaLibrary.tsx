@@ -26,6 +26,7 @@ import {
   deleteMediaItem,
   resetMediaLibrary,
   processUploadedImage,
+  getMediaCacheStatus,
 } from '../../lib/mediaStorage';
 import { Article } from '../../types';
 
@@ -50,14 +51,16 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+  const [cacheStatus, setCacheStatus] = useState(() => getMediaCacheStatus());
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const loadMedia = async () => {
+  const loadMedia = async (forceRefresh = false) => {
     setIsLoading(true);
     try {
-      const items = await getMediaLibrary();
+      const items = await getMediaLibrary(forceRefresh);
       setMediaList(items);
+      setCacheStatus(getMediaCacheStatus());
     } catch (err) {
       console.error('Failed to load media', err);
     } finally {
@@ -332,20 +335,55 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-          {['Tous', 'Articles', 'Auteurs', 'Documents', 'Général'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
-                selectedCategory === cat
-                  ? 'bg-[#3f241c] text-[#eae5da]'
-                  : 'bg-[#eae5da] text-[#3f241c]/70 hover:text-[#3f241c]'
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto overflow-x-auto justify-between sm:justify-end">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {['Tous', 'Articles', 'Auteurs', 'Documents', 'Général'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? 'bg-[#3f241c] text-[#eae5da]'
+                    : 'bg-[#eae5da] text-[#3f241c]/70 hover:text-[#3f241c]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 pl-1 border-l border-[#3f241c]/15">
+            <span
+              className={`hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold border ${
+                cacheStatus.isQuotaCooldown
+                  ? 'bg-amber-500/10 border-amber-600/30 text-amber-900'
+                  : 'bg-[#839b64]/10 border-[#839b64]/30 text-[#839b64]'
               }`}
+              title={
+                cacheStatus.isQuotaCooldown
+                  ? 'Quota Firestore atteint : le cache local IndexedDB est actif pour protéger vos lectures.'
+                  : 'Cache local IndexedDB actif : les images ne sont vérifiées depuis le cloud que si nécessaire.'
+              }
             >
-              {cat}
+              <HardDrive className="w-3 h-3" />
+              <span>
+                {cacheStatus.isQuotaCooldown
+                  ? 'Cache local autonome (quota protégé)'
+                  : 'Cache local actif'}
+              </span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => loadMedia(true)}
+              disabled={isLoading}
+              className="px-2.5 py-1.5 rounded-xl bg-[#eae5da] hover:bg-[#ded8cc] text-[#3f241c] text-xs font-mono font-bold border border-[#3f241c]/20 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="Vérifier et forcer la synchronisation avec le cloud"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualiser</span>
             </button>
-          ))}
+          </div>
         </div>
       </div>
 

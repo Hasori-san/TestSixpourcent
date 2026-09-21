@@ -3,7 +3,7 @@ import {
   deleteMediaFromCloud,
   db,
 } from './firebase';
-import { collection, getDocs, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 // Media Storage engine using IndexedDB with Firebase Cloud Firestore synchronization
 export interface MediaItem {
@@ -23,6 +23,21 @@ export interface MediaItem {
 const DB_NAME = 'six_pourcent_media_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'media_items';
+
+// Local storage keys for caching and quota protection
+const LS_MEDIA_LAST_SYNC_TS = 'six_media_last_cloud_updated_at';
+const LS_MEDIA_LAST_CHECK_TIME = 'six_media_last_meta_check_time';
+const SS_QUOTA_COOLDOWN = 'six_firestore_quota_cooldown';
+
+// Cooldown intervals
+const METADATA_CHECK_THROTTLE_MS = 3 * 60 * 1000; // Only check metadata at most once every 3 minutes
+const MEMORY_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes memory TTL
+const QUOTA_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes circuit breaker cooldown when quota is exceeded
+
+// In-memory cache & concurrency deduplication
+let memoryMediaCache: MediaItem[] | null = null;
+let lastMemoryFetchTime = 0;
+let inFlightFetchPromise: Promise<MediaItem[]> | null = null;
 
 // Starter / Default editorial media from the site
 export const INITIAL_MEDIA_PRESETS: MediaItem[] = [
@@ -105,6 +120,53 @@ export const INITIAL_MEDIA_PRESETS: MediaItem[] = [
   },
 ];
 
+function isQuotaError(err: unknown): boolean {
+  if (!err) return false;
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes('Quota') ||
+    msg.includes('quota') ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('exceeded')
+  );
+}
+
+export function isQuotaCircuitBreakerActive(): boolean {
+  try {
+    const raw = sessionStorage.getItem(SS_QUOTA_COOLDOWN);
+    if (!raw) return false;
+    const expiry = parseInt(raw, 10);
+    if (Date.now() < expiry) {
+      return true;
+    }
+    sessionStorage.removeItem(SS_QUOTA_COOLDOWN);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function tripQuotaCircuitBreaker() {
+  try {
+    sessionStorage.setItem(SS_QUOTA_COOLDOWN, String(Date.now() + QUOTA_COOLDOWN_MS));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function getMediaCacheStatus(): {
+  isQuotaCooldown: boolean;
+  isCachedInMemory: boolean;
+  itemCount: number;
+} {
+  return {
+    isQuotaCooldown: isQuotaCircuitBreakerActive(),
+    isCachedInMemory: memoryMediaCache !== null,
+    itemCount: memoryMediaCache?.length || 0,
+  };
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || !window.indexedDB) {
@@ -126,73 +188,29 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function getMediaLibrary(): Promise<MediaItem[]> {
-  // 1. Tenter de charger depuis Cloud Firestore (données globales pour tous les visiteurs)
-  try {
-    const snap = await getDocs(collection(db, 'media_items'));
-    if (!snap.empty) {
-      const cloudItems = snap.docs.map((d) => d.data() as MediaItem);
-      // Synchroniser en tâche de fond dans IndexedDB pour le cache local
-      try {
-        const idb = await openDB();
-        const tx = idb.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        cloudItems.forEach((item) => store.put(item));
-      } catch {
-        // Ignorer l'erreur de cache
-      }
-      return cloudItems;
-    } else {
-      // Si la collection Firestore est vide, injecter les visuels par défaut
-      const batch = writeBatch(db);
-      INITIAL_MEDIA_PRESETS.forEach((p) => {
-        batch.set(doc(db, 'media_items', p.id), p);
-      });
-      await batch.commit();
-      return INITIAL_MEDIA_PRESETS;
-    }
-  } catch (err) {
-    console.warn('[Firebase Media] Mode hors-ligne ou erreur, repli vers IndexedDB local:', err);
-  }
-
-  // 2. Repli vers le stockage local IndexedDB
+async function readAllFromIndexedDB(): Promise<MediaItem[]> {
   try {
     const idb = await openDB();
     return new Promise((resolve) => {
       const tx = idb.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.getAll();
-
-      req.onsuccess = () => {
-        const stored = (req.result as MediaItem[]) || [];
-        if (stored.length === 0) {
-          seedInitialPresets().then((seeded) => resolve(seeded));
-        } else {
-          const missing = INITIAL_MEDIA_PRESETS.filter(
-            (p) => !stored.some((item) => item.id === p.id)
-          );
-          if (missing.length > 0) {
-            try {
-              const writeTx = idb.transaction(STORE_NAME, 'readwrite');
-              const writeStore = writeTx.objectStore(STORE_NAME);
-              missing.forEach((item) => writeStore.put(item));
-            } catch {
-              // ignore write error
-            }
-            resolve([...stored, ...missing]);
-          } else {
-            resolve(stored);
-          }
-        }
-      };
-
-      req.onerror = () => {
-        resolve(INITIAL_MEDIA_PRESETS);
-      };
+      req.onsuccess = () => resolve((req.result as MediaItem[]) || []);
+      req.onerror = () => resolve([]);
     });
-  } catch (err) {
-    console.warn('IndexedDB unavailable, using memory presets', err);
-    return INITIAL_MEDIA_PRESETS;
+  } catch {
+    return [];
+  }
+}
+
+async function writeAllToIndexedDB(items: MediaItem[]): Promise<void> {
+  try {
+    const idb = await openDB();
+    const tx = idb.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    items.forEach((item) => store.put(item));
+  } catch {
+    // Ignore IDB write error
   }
 }
 
@@ -210,15 +228,126 @@ async function seedInitialPresets(): Promise<MediaItem[]> {
   }
 }
 
-export async function saveMediaItem(item: MediaItem): Promise<void> {
-  // 1. Sauvegarder dans Cloud Firestore (pour que l'image soit accessible mondialement)
-  try {
-    await saveMediaToCloud(item);
-  } catch (err) {
-    console.warn('[Firebase Media] Erreur de sauvegarde Cloud Firestore:', err);
+/**
+ * Charge la médiathèque avec politique Local-First et Smart Invalidation:
+ * 1. Retourne instantanément le cache mémoire si disponible (< 5 min).
+ * 2. Sinon charge immédiatement depuis IndexedDB local (0 coût Firestore).
+ * 3. Ne contacte Firestore que pour vérifier 1 seul document de métadonnées (settings/media_meta)
+ *    au maximum une fois toutes les 3 minutes (1 lecture au lieu de 20-50).
+ * 4. Ne télécharge la collection complète QUE si le cloud signale un changement réel.
+ * 5. Si quota dépassé, active le disjoncteur (circuit breaker) pour 15 min sans erreur.
+ */
+export async function getMediaLibrary(forceRefresh = false): Promise<MediaItem[]> {
+  // 1. Cache mémoire immédiat (0 lecture)
+  if (!forceRefresh && memoryMediaCache && memoryMediaCache.length > 0 && Date.now() - lastMemoryFetchTime < MEMORY_CACHE_TTL_MS) {
+    return memoryMediaCache;
   }
 
-  // 2. Sauvegarder dans IndexedDB local (cache immédiat)
+  // 2. Déduplication des requêtes concurrentes en vol
+  if (inFlightFetchPromise && !forceRefresh) {
+    return inFlightFetchPromise;
+  }
+
+  inFlightFetchPromise = (async () => {
+    // 3. Charger d'abord depuis IndexedDB pour que l'affichage soit immédiat
+    let localItems = await readAllFromIndexedDB();
+    if (localItems.length === 0) {
+      localItems = await seedInitialPresets();
+    }
+
+    // Mettre à jour le cache mémoire avec les données locales
+    memoryMediaCache = localItems;
+    lastMemoryFetchTime = Date.now();
+
+    // 4. Si disjoncteur quota actif et pas de rafraîchissement forcé, rester en local pur
+    if (isQuotaCircuitBreakerActive() && !forceRefresh) {
+      return localItems;
+    }
+
+    // 5. Throttling de la vérification distante (au maximum 1 vérification toutes les 3 min)
+    if (!forceRefresh) {
+      const lastCheck = parseInt(localStorage.getItem(LS_MEDIA_LAST_CHECK_TIME) || '0', 10);
+      if (Date.now() - lastCheck < METADATA_CHECK_THROTTLE_MS && localItems.length > 0) {
+        return localItems;
+      }
+    }
+
+    // 6. Vérification intelligente du Cloud Firestore
+    try {
+      localStorage.setItem(LS_MEDIA_LAST_CHECK_TIME, String(Date.now()));
+
+      // Étape économique : lire UNIQUEMENT 1 document léger de métadonnées (1 lecture)
+      let needsFullDownload = forceRefresh || localItems.length === 0;
+      let cloudLastUpdated = 0;
+
+      if (!needsFullDownload) {
+        const metaSnap = await getDoc(doc(db, 'settings', 'media_meta'));
+        if (metaSnap.exists()) {
+          const metaData = metaSnap.data();
+          cloudLastUpdated = metaData?.lastUpdatedAt || 0;
+          const localLastSync = parseInt(localStorage.getItem(LS_MEDIA_LAST_SYNC_TS) || '0', 10);
+
+          // Si les données cloud n'ont pas changé depuis la dernière synchronisation locale,
+          // ON N'APPELLE PAS la collection complète ! (Économie de N lectures)
+          if (cloudLastUpdated <= localLastSync && localItems.length > 0) {
+            return localItems;
+          }
+          needsFullDownload = true;
+        } else {
+          // Si le document de métadonnées n'existe pas encore, vérifier la collection
+          needsFullDownload = true;
+        }
+      }
+
+      if (needsFullDownload) {
+        const snap = await getDocs(collection(db, 'media_items'));
+        if (!snap.empty) {
+          const cloudItems = snap.docs.map((d) => d.data() as MediaItem);
+          await writeAllToIndexedDB(cloudItems);
+          memoryMediaCache = cloudItems;
+          lastMemoryFetchTime = Date.now();
+          const effectiveTs = cloudLastUpdated || Date.now();
+          localStorage.setItem(LS_MEDIA_LAST_SYNC_TS, String(effectiveTs));
+          return cloudItems;
+        } else {
+          // Collection vide, peupler avec les visuels initiaux
+          const batch = writeBatch(db);
+          INITIAL_MEDIA_PRESETS.forEach((p) => {
+            batch.set(doc(db, 'media_items', p.id), p);
+          });
+          const now = Date.now();
+          batch.set(doc(db, 'settings', 'media_meta'), {
+            lastUpdatedAt: now,
+            count: INITIAL_MEDIA_PRESETS.length,
+          });
+          await batch.commit();
+          await writeAllToIndexedDB(INITIAL_MEDIA_PRESETS);
+          localStorage.setItem(LS_MEDIA_LAST_SYNC_TS, String(now));
+          return INITIAL_MEDIA_PRESETS;
+        }
+      }
+
+      return localItems;
+    } catch (err) {
+      if (isQuotaError(err)) {
+        tripQuotaCircuitBreaker();
+        console.info('[Firebase Media] Quota Firestore temporairement atteint. Utilisation optimale du cache local IndexedDB (mode haute performance).');
+      } else {
+        console.warn('[Firebase Media] Mode hors-ligne ou erreur, utilisation du cache local:', err);
+      }
+      return localItems;
+    }
+  })();
+
+  try {
+    return await inFlightFetchPromise;
+  } finally {
+    inFlightFetchPromise = null;
+  }
+}
+
+export async function saveMediaItem(item: MediaItem): Promise<void> {
+  // 1. Sauvegarder dans IndexedDB local (cache immédiat et résilient)
   try {
     const idb = await openDB();
     await new Promise<void>((resolve, reject) => {
@@ -231,17 +360,47 @@ export async function saveMediaItem(item: MediaItem): Promise<void> {
   } catch (err) {
     console.warn('[IndexedDB] Erreur sauvegarde locale:', err);
   }
+
+  // 2. Mettre à jour le cache mémoire
+  if (memoryMediaCache) {
+    const idx = memoryMediaCache.findIndex((m) => m.id === item.id);
+    if (idx >= 0) {
+      memoryMediaCache[idx] = item;
+    } else {
+      memoryMediaCache = [item, ...memoryMediaCache];
+    }
+    lastMemoryFetchTime = Date.now();
+  }
+
+  const now = Date.now();
+  localStorage.setItem(LS_MEDIA_LAST_SYNC_TS, String(now));
+
+  // 3. Sauvegarder dans Cloud Firestore si le quota n'est pas bloqué
+  if (!isQuotaCircuitBreakerActive()) {
+    try {
+      await saveMediaToCloud(item);
+      // Mettre à jour les métadonnées pour signaler le changement aux autres clients
+      await setDoc(
+        doc(db, 'settings', 'media_meta'),
+        {
+          lastUpdatedAt: now,
+          count: memoryMediaCache?.length || 1,
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      if (isQuotaError(err)) {
+        tripQuotaCircuitBreaker();
+        console.info('[Firebase Media] Quota Firestore atteint lors de l\'enregistrement, préservé en local avec succès.');
+      } else {
+        console.warn('[Firebase Media] Erreur de sauvegarde Cloud Firestore:', err);
+      }
+    }
+  }
 }
 
 export async function deleteMediaItem(id: string): Promise<void> {
-  // 1. Supprimer de Cloud Firestore
-  try {
-    await deleteMediaFromCloud(id);
-  } catch (err) {
-    console.warn('[Firebase Media] Erreur suppression Cloud Firestore:', err);
-  }
-
-  // 2. Supprimer d'IndexedDB local
+  // 1. Supprimer d'IndexedDB local
   try {
     const idb = await openDB();
     await new Promise<void>((resolve, reject) => {
@@ -254,32 +413,79 @@ export async function deleteMediaItem(id: string): Promise<void> {
   } catch (err) {
     console.warn('[IndexedDB] Erreur suppression locale:', err);
   }
+
+  // 2. Mettre à jour le cache mémoire
+  if (memoryMediaCache) {
+    memoryMediaCache = memoryMediaCache.filter((m) => m.id !== id);
+    lastMemoryFetchTime = Date.now();
+  }
+
+  const now = Date.now();
+  localStorage.setItem(LS_MEDIA_LAST_SYNC_TS, String(now));
+
+  // 3. Supprimer de Cloud Firestore si possible
+  if (!isQuotaCircuitBreakerActive()) {
+    try {
+      await deleteMediaFromCloud(id);
+      await setDoc(
+        doc(db, 'settings', 'media_meta'),
+        {
+          lastUpdatedAt: now,
+          count: memoryMediaCache?.length || 0,
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      if (isQuotaError(err)) {
+        tripQuotaCircuitBreaker();
+      } else {
+        console.warn('[Firebase Media] Erreur suppression Cloud Firestore:', err);
+      }
+    }
+  }
 }
 
 export async function resetMediaLibrary(): Promise<MediaItem[]> {
-  try {
-    const snap = await getDocs(collection(db, 'media_items'));
-    const batch = writeBatch(db);
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    INITIAL_MEDIA_PRESETS.forEach((p) => {
-      batch.set(doc(db, 'media_items', p.id), p);
-    });
-    await batch.commit();
-  } catch (err) {
-    console.warn('[Firebase Media] Erreur réinitialisation Cloud:', err);
-  }
-
   const idb = await openDB();
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const tx = idb.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.clear();
     for (const item of INITIAL_MEDIA_PRESETS) {
       store.put(item);
     }
-    tx.oncomplete = () => resolve(INITIAL_MEDIA_PRESETS);
+    tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+
+  memoryMediaCache = [...INITIAL_MEDIA_PRESETS];
+  lastMemoryFetchTime = Date.now();
+  const now = Date.now();
+  localStorage.setItem(LS_MEDIA_LAST_SYNC_TS, String(now));
+
+  if (!isQuotaCircuitBreakerActive()) {
+    try {
+      const snap = await getDocs(collection(db, 'media_items'));
+      const batch = writeBatch(db);
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      INITIAL_MEDIA_PRESETS.forEach((p) => {
+        batch.set(doc(db, 'media_items', p.id), p);
+      });
+      batch.set(doc(db, 'settings', 'media_meta'), {
+        lastUpdatedAt: now,
+        count: INITIAL_MEDIA_PRESETS.length,
+      });
+      await batch.commit();
+    } catch (err) {
+      if (isQuotaError(err)) {
+        tripQuotaCircuitBreaker();
+      } else {
+        console.warn('[Firebase Media] Erreur réinitialisation Cloud:', err);
+      }
+    }
+  }
+
+  return INITIAL_MEDIA_PRESETS;
 }
 
 // Convert File to compressed DataURL with dimensions detection
