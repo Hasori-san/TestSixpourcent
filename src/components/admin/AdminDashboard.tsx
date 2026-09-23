@@ -114,13 +114,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [quickPhotoJournalist, setQuickPhotoJournalist] = useState<Journalist | null>(null);
   const [deleteJournalistConfirmId, setDeleteJournalistConfirmId] = useState<string | null>(null);
 
-  const handleAssignMediaToArticle = (articleId: string, imageUrl: string, imageCaption?: string) => {
+  const handleAssignMediaToArticle = (
+    articleId: string,
+    imageUrl: string,
+    imageCaption?: string,
+    imageCredits?: string
+  ) => {
     const found = articles.find((a) => a.id === articleId);
     if (found) {
       const updated: Article = {
         ...found,
         heroImage: imageUrl,
         heroImageCaption: imageCaption || found.heroImageCaption,
+        heroImageCredits: imageCredits || found.heroImageCredits || 'Archives Six%',
       };
       onUpdateArticle(updated);
     }

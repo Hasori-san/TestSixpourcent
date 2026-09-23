@@ -12,6 +12,7 @@
         "author": { "type": "object", "description": "Informations sur l'auteur journaliste" },
         "heroImage": { "type": "string", "description": "URL de la photo de couverture" },
         "heroImageCaption": { "type": "string", "description": "Légende de la photo" },
+        "heroImageCredits": { "type": "string", "description": "Crédits et source de la photo d'enquête" },
         "content": { "type": "string", "description": "Contenu complet de l'enquête en markdown" },
         "revelations": { "type": "array", "description": "Points clés et révélations" },
         "readTime": { "type": "string", "description": "Temps de lecture estimé" },

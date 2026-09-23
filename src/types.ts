@@ -45,6 +45,7 @@ export interface Article {
   readTimeMinutes: number;
   heroImage: string;
   heroImageCaption: string;
+  heroImageCredits?: string;
   isPopular?: boolean;
   isFeatured?: boolean;
   investigationDays: number;

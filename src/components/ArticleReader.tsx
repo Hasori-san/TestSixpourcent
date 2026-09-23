@@ -283,9 +283,11 @@ export const ArticleReader: React.FC<ArticleReaderProps> = ({
             alt={article.title}
             className="w-full max-h-[460px] object-cover"
           />
-          <div className="p-3 bg-[#ded8cc]/40 text-xs text-[#3f241c]/80 italic border-t border-[#3f241c]/10 flex items-center justify-between">
+          <div className="p-3 bg-[#ded8cc]/40 text-xs text-[#3f241c]/80 italic border-t border-[#3f241c]/10 flex flex-wrap items-center justify-between gap-2">
             <span>{article.heroImageCaption}</span>
-            <span className="font-mono text-[10px] uppercase text-[#3f241c]/60">Crédits : Archives Six%</span>
+            <span className="font-mono text-[10px] uppercase text-[#3f241c]/60">
+              Crédits : {article.heroImageCredits || 'Archives Six%'}
+            </span>
           </div>
         </div>
 

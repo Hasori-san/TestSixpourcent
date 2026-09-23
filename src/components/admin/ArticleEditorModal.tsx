@@ -48,6 +48,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   const [readTimeMinutes, setReadTimeMinutes] = useState(7);
   const [heroImage, setHeroImage] = useState(SUGGESTED_HERO_IMAGES[0].url);
   const [heroImageCaption, setHeroImageCaption] = useState('Image d\'investigation Six%');
+  const [heroImageCredits, setHeroImageCredits] = useState('Archives Six%');
   const [isPopular, setIsPopular] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [investigationDays, setInvestigationDays] = useState(180);
@@ -94,6 +95,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       setReadTimeMinutes(articleToEdit.readTimeMinutes);
       setHeroImage(articleToEdit.heroImage);
       setHeroImageCaption(articleToEdit.heroImageCaption);
+      setHeroImageCredits(articleToEdit.heroImageCredits || 'Archives Six%');
       setIsPopular(!!articleToEdit.isPopular);
       setIsFeatured(!!articleToEdit.isFeatured);
       setInvestigationDays(articleToEdit.investigationDays || 120);
@@ -116,6 +118,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       setReadTimeMinutes(8);
       setHeroImage(SUGGESTED_HERO_IMAGES[0].url);
       setHeroImageCaption('Photographie / illustration exclusive');
+      setHeroImageCredits('Archives Six%');
       setIsPopular(false);
       setIsFeatured(false);
       setInvestigationDays(150);
@@ -195,6 +198,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       readTimeMinutes: Number(readTimeMinutes) || 8,
       heroImage: heroImage.trim(),
       heroImageCaption: heroImageCaption.trim() || 'Photographie / document exclusif',
+      heroImageCredits: heroImageCredits.trim() || 'Archives Six%',
       isPopular,
       isFeatured,
       investigationDays: articleToEdit?.investigationDays || Number(investigationDays) || 90,
@@ -560,17 +564,54 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               ))}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
-                Légende de l'image
-              </label>
-              <input
-                type="text"
-                value={heroImageCaption}
-                onChange={(e) => setHeroImageCaption(e.target.value)}
-                placeholder="ex. Concessions maritimes explorées au large de Clarion-Clipperton"
-                className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 outline-none text-xs"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold font-mono uppercase text-[#3f241c] mb-1">
+                  Légende de l'image
+                </label>
+                <input
+                  type="text"
+                  value={heroImageCaption}
+                  onChange={(e) => setHeroImageCaption(e.target.value)}
+                  placeholder="ex. Concessions maritimes explorées au large..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-xs"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold font-mono uppercase text-[#3f241c]">
+                    Crédits photo / Source
+                  </label>
+                  <span className="text-[10px] font-mono text-[#3f241c]/60">Affiché sous la photo</span>
+                </div>
+                <input
+                  type="text"
+                  value={heroImageCredits}
+                  onChange={(e) => setHeroImageCredits(e.target.value)}
+                  placeholder="ex. Archives Six%, AFP, Reuters..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#f4f0e8] border border-[#3f241c]/25 focus:border-[#839b64] outline-none text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Quick suggested credit badges */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-0.5 text-xs">
+              <span className="text-[10px] font-mono text-[#3f241c]/60 shrink-0">Suggestions crédits :</span>
+              {['Archives Six%', 'Enquête Six%', 'AFP', 'Reuters', 'Collectif Indépendant', 'Libre de droits'].map((cr) => (
+                <button
+                  key={cr}
+                  type="button"
+                  onClick={() => setHeroImageCredits(cr)}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono border transition-colors cursor-pointer ${
+                    heroImageCredits === cr
+                      ? 'bg-[#3f241c] text-[#eae5da] border-[#3f241c]'
+                      : 'bg-[#ded8cc]/60 text-[#3f241c]/80 border-[#3f241c]/20 hover:border-[#839b64] hover:text-[#3f241c]'
+                  }`}
+                >
+                  {cr}
+                </button>
+              ))}
             </div>
           </div>
 

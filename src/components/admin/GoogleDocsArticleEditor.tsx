@@ -120,6 +120,7 @@ export const GoogleDocsArticleEditor: React.FC<GoogleDocsArticleEditorProps> = (
   const [readTimeMinutes, setReadTimeMinutes] = useState(8);
   const [heroImage, setHeroImage] = useState(SUGGESTED_HERO_IMAGES[0].url);
   const [heroImageCaption, setHeroImageCaption] = useState('Photographie exclusive Six%');
+  const [heroImageCredits, setHeroImageCredits] = useState('Archives Six%');
   const [isPopular, setIsPopular] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [keyRevelations, setKeyRevelations] = useState<string[]>([]);
@@ -189,6 +190,7 @@ export const GoogleDocsArticleEditor: React.FC<GoogleDocsArticleEditorProps> = (
       setReadTimeMinutes(articleToEdit.readTimeMinutes);
       setHeroImage(articleToEdit.heroImage);
       setHeroImageCaption(articleToEdit.heroImageCaption);
+      setHeroImageCredits(articleToEdit.heroImageCredits || 'Archives Six%');
       setIsPopular(!!articleToEdit.isPopular);
       setIsFeatured(!!articleToEdit.isFeatured);
       setKeyRevelations(articleToEdit.keyRevelations || []);
@@ -670,6 +672,7 @@ export const GoogleDocsArticleEditor: React.FC<GoogleDocsArticleEditorProps> = (
       readTimeMinutes: estimatedReadingTime || readTimeMinutes || 6,
       heroImage: heroImage.trim() || (articleToEdit?.heroImage ?? SUGGESTED_HERO_IMAGES[0].url),
       heroImageCaption: heroImageCaption.trim() || 'Photographie / document exclusif',
+      heroImageCredits: heroImageCredits.trim() || 'Archives Six%',
       isPopular,
       isFeatured,
       investigationDays: articleToEdit?.investigationDays || 120,
@@ -1422,11 +1425,12 @@ export const GoogleDocsArticleEditor: React.FC<GoogleDocsArticleEditorProps> = (
               {heroImage && (
                 <div className="mb-8 rounded-2xl overflow-hidden border border-[#3f241c]/20 shadow-md">
                   <img src={heroImage} alt={title} className="w-full max-h-96 object-cover" />
-                  {heroImageCaption && (
-                    <p className="p-3 bg-[#ded8cc]/50 text-xs text-[#3f241c]/70 italic">
-                      {heroImageCaption}
-                    </p>
-                  )}
+                  <div className="p-3 bg-[#ded8cc]/50 text-xs text-[#3f241c]/70 italic flex flex-wrap items-center justify-between gap-2">
+                    <span>{heroImageCaption || 'Photographie d\'investigation'}</span>
+                    <span className="font-mono text-[10px] uppercase text-[#3f241c]/60">
+                      Crédits : {heroImageCredits || 'Archives Six%'}
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -1524,8 +1528,31 @@ export const GoogleDocsArticleEditor: React.FC<GoogleDocsArticleEditorProps> = (
                   value={heroImageCaption}
                   onChange={(e) => setHeroImageCaption(e.target.value)}
                   placeholder="Légende de la photo..."
-                  className="w-full mt-2 px-3 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs outline-none"
+                  className="w-full mt-2 px-3 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs outline-none focus:border-[#839b64]"
                 />
+                <input
+                  type="text"
+                  value={heroImageCredits}
+                  onChange={(e) => setHeroImageCredits(e.target.value)}
+                  placeholder="Crédits photo (ex. Archives Six%, AFP...)"
+                  className="w-full mt-2 px-3 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono outline-none focus:border-[#839b64]"
+                />
+                <div className="flex items-center gap-1 flex-wrap pt-1">
+                  {['Archives Six%', 'Enquête Six%', 'AFP', 'Reuters'].map((cr) => (
+                    <button
+                      key={cr}
+                      type="button"
+                      onClick={() => setHeroImageCredits(cr)}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-mono border transition-colors cursor-pointer ${
+                        heroImageCredits === cr
+                          ? 'bg-[#3f241c] text-white border-[#3f241c]'
+                          : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:border-[#839b64]'
+                      }`}
+                    >
+                      {cr}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Journalist Profile */}
